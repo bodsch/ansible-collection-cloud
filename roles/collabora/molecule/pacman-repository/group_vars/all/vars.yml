@@ -1,0 +1,9 @@
+---
+
+collabora_arch:
+  install_type: repository   # source | archive | repository
+  packages:
+    - collabora-online-server
+    - collabora-online-server_de
+
+...

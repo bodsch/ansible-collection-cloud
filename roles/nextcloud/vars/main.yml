@@ -1,0 +1,378 @@
+---
+
+nextcloud_main_version: "{{ nextcloud_version[0:1] }}"
+
+nextcloud_delegate_to: localhost
+
+nextcloud_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/nextcloud', true) }}/{{ nextcloud_version }}"
+
+nextcloud_cache_directory: /var/cache/ansible/nextcloud
+
+nextcloud_remote_tmp_directory: "{{ nextcloud_cache_directory }}/{{ nextcloud_version }}"
+
+nextcloud_owner_default: www-data
+
+nextcloud_dependencies:
+  - unzip
+  - tar
+  - bzip2
+  - python3-pip
+  - sudo
+  - php{{ php_version }}-xmlrpc
+  - php{{ php_version }}-ldap
+  - php{{ php_version }}-curl
+  - php{{ php_version }}-mbstring
+  - php{{ php_version }}-zip
+  - php{{ php_version }}-intl
+  - php{{ php_version }}-gd
+
+nextcloud_php_packages:
+  redis:
+    - php{{ php_version }}-redis
+  memcache:
+    - php{{ php_version }}-memcached
+    - php{{ php_version }}-msgpack
+  sqlite:
+    - php{{ php_version }}-sqlite3
+  mysql:
+    - php{{ php_version }}-mysql
+
+nextcloud_python_packages:
+  # - name: mysqlclient
+  - name: dirsync
+
+nextcloud_python_build_packages:
+  - libmariadb-dev
+  - python3-dev
+  - python3-wheel
+  - gcc
+
+nextcloud_packages: []
+
+nextcloud_defaults_database:                                                   #
+  type: sqlite3                                                                #
+  username: ""                                                                 #
+  password: ""                                                                 #
+  hostname: ""                                                                 #
+  port: ""                                                                     #
+  schema: nextcloud                                                            #
+  tableprefix: oc_                                                             #
+  persistent: true                                                             #
+                                                                               #
+  dbdriveroptions:                                                             #
+    - "PDO::MYSQL_ATTR_SSL_CA": '/file/path/to/ca_cert.pem'                    #
+    - "PDO::MYSQL_ATTR_SSL_KEY": '/file/path/to/mysql-client-key.pem'          #
+    - "PDO::MYSQL_ATTR_SSL_CERT": '/file/path/to/mysql-client-cert.pem'        #
+    - "PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT": false                          #
+    - "PDO::MYSQL_ATTR_INIT_COMMAND": 'SET wait_timeout = 28800'               #
+                                                                               #
+  sqlite:                                                                      #
+    journal_mode: 'DELETE'                                                     #
+                                                                               #
+  mysql:                                                                       #
+    utf8mb4: false                                                             #
+    collation: ""                                                              #
+
+nextcloud_defaults_defaults:
+  # https://docs.nextcloud.com/server/29/admin_manual/configuration_server/config_sample_php_parameters.html
+  language:
+    default: ""                                                 # en
+    force: ""                                                   # false
+  locale:
+    default: ""                                                 # en_GB
+    force: ""                                                   # false
+  phone_region: DE
+  defaultapps: []                                               # [dashboard, files]
+  knowledgebase_enabled: ""                                     # true
+  allow_user_to_change_display_name: ""                         # true
+  remember_login_cookie_lifetime: ""                            # "60*60*24*15"
+  session:
+    lifetime: ""                                                # "60 * 60 * 24"
+    relaxed_expiry: ""                                          # false
+    keepalive: true                                             # true
+  auto_logout: ""                                               # false
+  token:
+    auth_enforced: ""                                           # false
+    auth_activity_update: ""                                    # "60"
+  auth:
+    bruteforce:
+      protection:
+        enabled: ""                                             # true
+        testing: ""                                             # false
+    webauthn:
+      enabled: ""                                               # true
+    storeCryptedPassword: ""                                    # true
+
+  theme: ""                                                     #
+  enforce_theme: ""                                             # E.g. dark, dark-highcontrast, default, light, light-highcontrast, opendyslexic
+
+  ratelimit:
+    protection:
+      enabled: ""                                               # true
+
+  hide_login_form: ""                                           # false
+
+  skeleton_directory: ""
+  template_directory: ""
+  temp_directory: ""
+  update_directory: ""
+  data_directory: "{{ nextcloud_install_base_directory }}/nextcloud/data"
+
+  lost_password_link: ""
+  logo_url: ""
+
+  mail:
+    domain: ""                                                  # example.com
+    from_address: ""                                            # nextcloud
+    debug: ""                                                   # false
+    mode: ""                                                    # smtp
+    hostname: ""                                                # 127.0.0.1
+    port: ""                                                    # 25
+    timeout: ""                                                 # 10
+    secure: ""
+    auth:
+      enabled: ""                                               # false
+      username: ""
+      password: ""
+    template_class: ""                                          # '\OC\Mail\EMailTemplate'
+    send_plaintext_only: ""                                     # false
+    stream_options: []
+    sendmailmode: ""                                            # smtp
+
+  proxy:
+    overwrite:
+      host: ""
+      protocol: ""
+      web_root: ""
+      cond_addr: ""
+      cli_url: ""
+    htaccess:
+      rewrite_base: ""                                          # '/'
+      ignore_front_controller: ""                               # false
+    proxy_name: ""
+    password: ""
+    exclude: []
+    allow_local_remote_servers: ""                              # true
+
+  trashbin:
+    retention_obligation: ""                                    # auto
+  versions:
+    retention_obligation: ""                                    # auto
+
+  app_code_checker: ""                                          # true
+
+  update:
+    checker: ""                                                 # true
+    server_url: ""                                              # "https://updates.nextcloud.com/updater_server/"
+    release_channel: ""                                         # stable
+
+  has_internet_connection: ""                                   # true
+
+  checks:
+    connectivity_domains: []
+    #  - www.nextcloud.com
+    #  - www.startpage.com
+    #  - www.eff.org
+    #  - www.edri.org
+    working_wellknown_setup: ""                                 # true
+    working_htaccess: ""                                        # true
+    data_directory_permissions: ""                              # true
+
+  config_is_read_only: ""                                       # false
+
+  logging:
+    type: ""                                                    # 'file'
+    type_audit: ""                                              # 'file'
+    file: ""                                                    # '/var/log/nextcloud.log'
+    logfile_audit: ""                                           # '/var/log/audit.log'
+    filemode: ""                                                # 0640
+    # https://docs.nextcloud.com/server/29/admin_manual/configuration_server/logging_configuration.html#log-level
+    level: 1                                                   # 2 [0 = debug, 1 = info, 2 = warn, 3 = error, 4 = fatal]
+    level_frontend: ""                                          # 2
+    syslog_tag: ""                                              # 'Nextcloud'
+    syslog_tag_audit: ""                                        # 'Nextcloud'
+    condition:
+      shared_secret: ""                                         # '57b58edb6637fe3059b3595cf9c41b9'
+      users: []
+      #  - sample-user
+      apps: []
+      #  - files
+    dateformat: ""                                              # 'F d, Y H:i:s'
+    timezone: ""                                                # 'Europe/Berlin'
+    query: ""                                                   # false
+    rotate_size: ""                                             # "100 * 1024 * 1024" (Defaults to 100 MB)
+
+  profiler: ""                                                  # false
+
+  customclient:
+    desktop: ""                                                 # 'https://nextcloud.com/install/#install-clients'
+    android: ""                                                 # 'https://play.google.com/store/apps/details?id=com.nextcloud.client'
+    ios: ""                                                     # 'https://itunes.apple.com/us/app/nextcloud/id1125420102?mt=8'
+    ios_appid: ""                                               # '1125420102'
+
+  apps:
+    store:
+      enabled: ""                                               # true
+      url: ""                                                   # 'https://apps.nextcloud.com/api/v1'
+    allowlist: []
+    paths: []
+    #  - path: '/var/www/nextcloud/apps'
+    #    url: '/apps'
+    #    writable: true
+
+  image_previews:
+    enabled: ""                                                 # true
+    concurrency:
+      all: ""                                                   # 8
+      new: ""                                                   # 4
+    max_x: ""                                                   # 4096
+    max_y: ""                                                   # 4096
+    max_filesize_image: ""                                      # 50
+    max_memory: ""                                              # 256
+    libreoffice_path: ""                                        # '/usr/bin/libreoffice'
+    office_cl_parameters: []
+    #  - --headless --nologo
+    #  - --nofirststartwizard
+    #  - --invisible
+    #  - --norestore
+    #  - --convert-to png
+    #  - --outdir
+    ffmpeg_path: ""                                             # '/usr/bin/ffmpeg'
+    imaginary_url: ""                                           # 'http://previews_hpb:8088/'
+    providers: []
+    #  - 'OC\Preview\PNG'
+    #  - 'OC\Preview\JPEG'
+    #  - 'OC\Preview\GIF'
+    #  - 'OC\Preview\BMP'
+    #  - 'OC\Preview\XBitmap'
+    #  - 'OC\Preview\MP3'
+    #  - 'OC\Preview\TXT'
+    #  - 'OC\Preview\MarkDown'
+    #  - 'OC\Preview\OpenDocument'
+    #  - 'OC\Preview\Krita'
+
+  ldap:
+    UserCleanupInterval: ""                                     # 51
+    sort_groups_by_name: ""                                     # false
+    ldap_log_file: ""                                           #
+
+  comments:
+    manager_factory: ""                                         # '\OC\Comments\ManagerFactory'
+
+  systemtags:
+    manager_factory: ""                                         # '\OC\SystemTag\ManagerFactory'
+
+  maintenance:
+    enabled: ""                                                 # false
+    window_start: ""                                            # 1
+
+  openssl:
+    - config: ""                                                # '/absolute/location/of/openssl.cnf'
+
+  memcache:
+    local: ""                                                   # '\OC\Memcache\APCu'
+    distributed: ""                                             # '\OC\Memcache\Memcached'
+    locking: ""                                                 # '\OC\Memcache\Redis'
+    # hostname, port and optional weight
+    # or path and port 0 for unix socket. Also see:
+    # https://www.php.net/manual/en/memcached.addservers.php
+    # https://www.php.net/manual/en/memcached.addserver.php
+    servers: []                                                 # - [localhost, 11211, 0]
+    options: {}
+      # # Set timeouts to 50ms
+      # '\Memcached::OPT_CONNECT_TIMEOUT': 50
+      # '\Memcached::OPT_RETRY_TIMEOUT': 50
+      # '\Memcached::OPT_SEND_TIMEOUT': 50
+      # '\Memcached::OPT_RECV_TIMEOUT': 50
+      # '\Memcached::OPT_POLL_TIMEOUT': 50
+      # # Enable compression
+      # '\Memcached::OPT_COMPRESSION': true
+      # # Turn on consistent hashing
+      # '\Memcached::OPT_LIBKETAMA_COMPATIBLE': true,
+      # # Enable Binary Protocol
+      # '\Memcached::OPT_BINARY_PROTOCOL': true,
+      # # Binary serializer vill be enabled if the igbinary PECL module is available
+      # # - \Memcached::OPT_SERIALIZER => \Memcached::SERIALIZER_IGBINARY,
+
+  redis: []
+    # - host: 'localhost'                                 # can also be a unix domain socket: '/tmp/redis.sock'
+    #   port: 6379
+    #   timeout: 0.0
+    #   read_timeout: 0.0
+    #   user: ''                                          # Optional: if not defined, no password will be used.
+    #   password: ''                                      # Optional: if not defined, no password will be used.
+    #   dbindex: 0                                        # Optional: if undefined SELECT will not run and will use Redis Server's default DB Index.
+    #   # If redis in-transit encryption is enabled, provide certificates
+    #   # SSL context https://www.php.net/manual/en/context.ssl.php
+    #   ssl_context:
+    #     - local_cert: '/certs/redis.crt'
+    #     - local_pk: '/certs/redis.key'
+    #     - cafile: '/certs/ca.crt'
+
+    # cluster:
+    #   - seeds:                                          # provide some or all of the cluster servers to bootstrap discovery, port required
+    #       - 'localhost:7000'
+    #       - 'localhost:7001'
+    #     timeout: 0.0
+    #     read_timeout: 0.0
+    #     failover_mode: \RedisCluster::FAILOVER_ERROR
+    #     user: ''                                        # Optional: if not defined, no password will be used.
+    #     password: ''                                    # Optional: if not defined, no password will be used.
+    #     # If redis in-transit encryption is enabled, provide certificates
+    #     # SSL context https://www.php.net/manual/en/context.ssl.php
+    #     ssl_context:
+    #       - local_cert: '/certs/redis.crt'
+    #       - local_pk: '/certs/redis.key'
+    #       - cafile: '/certs/ca.crt'
+    #
+    # redis_log_file: ""
+
+  cache:
+    path: ""                                                    #
+    chunk_gc_ttl: ""                                            # "60*60*24"
+
+  objectstore: []
+
+  sharing:
+    manager_factory: ""                                         # '\OC\Share20\ProviderFactory',
+    enable_mail_link_password_expiration: ""                    # false
+    mail_link_password_expiration_interval: ""                  # 3600
+    maxAutocompleteResults: ""                                  # 25
+    minSearchStringLength: ""                                   # 0
+    enable_share_accept: ""                                     # false
+    force_share_accept: ""                                      # false
+    allow_custom_share_folder: ""                               # false
+    enable_share_mail: ""                                       # true
+    allow_disabled_password_enforcement_groups: ""              # false
+    folder: ""                                                  # "/"
+    transferIncomingShares: ""                                  # false
+
+  hashing:
+    default_password: ""                                        # false
+    Threads: ""                                                 # PASSWORD_ARGON2_DEFAULT_THREADS
+    MemoryCost: ""                                              # PASSWORD_ARGON2_DEFAULT_MEMORY_COST
+    TimeCost: ""                                                # PASSWORD_ARGON2_DEFAULT_TIME_COST
+    Cost: ""                                                    # 10
+
+  query_log_file: ""
+
+nextcloud_defaults_release:
+  download_url: "https://download.nextcloud.com/server/{{ nextcloud_release_type }}"
+  file: "nextcloud-{{ nextcloud_version }}.tar.bz2"
+  checksum: "nextcloud-{{ nextcloud_version }}.tar.bz2.sha256"
+
+# ---------------------------------------------
+
+go_arch_map:
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+  armv6l: 'armv6'
+
+system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system
+
+...

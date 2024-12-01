@@ -1,0 +1,23 @@
+---
+
+galaxy_info:
+  role_name: calcardbackup
+  namespace: bodsch
+
+  author: Bodo Schulz
+  description: ansible role to setup calcardbackup
+  license: Apache
+  min_ansible_version: 2.9
+
+  platforms:
+    - name: Debian
+      versions:
+        # 11
+        - bullseye
+
+  galaxy_tags:
+    - calcardbackup
+
+dependencies: []
+
+...

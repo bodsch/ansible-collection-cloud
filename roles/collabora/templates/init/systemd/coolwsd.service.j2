@@ -1,0 +1,26 @@
+[Unit]
+
+Description           = Collabora Online WebSocket Daemon
+After                 = network.target
+
+[Service]
+EnvironmentFile       = -{{ collabora_defaults_directory }}/coolwsd
+ExecStart             = /usr/bin/coolwsd  $OPTIONS
+KillSignal            = SIGINT
+TimeoutStopSec        = 120
+User                  = {{ collabora_owner }}
+KillMode              = mixed
+Restart               = always
+LimitNOFILE           = infinity:infinity
+
+ProtectSystem         = strict
+ReadWritePaths        = /opt/cool /var/log
+
+ProtectHome           = yes
+PrivateTmp            = yes
+ProtectControlGroups  = yes
+CapabilityBoundingSet = CAP_FOWNER CAP_CHOWN CAP_MKNOD CAP_SYS_CHROOT CAP_SYS_ADMIN
+
+[Install]
+Alias                 = collabora.service
+WantedBy              = multi-user.target

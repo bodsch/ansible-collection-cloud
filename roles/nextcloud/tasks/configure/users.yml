@@ -1,0 +1,24 @@
+---
+
+- name: validate user passwords
+  run_once: true
+  ansible.builtin.set_fact:
+    nextcloud_validated_passwords: "{{ nextcloud_users | bodsch.cloud.nc_validate_passwords(nextcloud_password_validation) }}"
+
+- name: password states
+  ansible.builtin.fail:
+    msg: "your users passwords are not valid!\n
+         {{ nextcloud_validated_passwords.result | to_nice_yaml }}"
+  when:
+    - nextcloud_validated_passwords.failed
+  run_once: true
+
+- name: nextcloud users
+  bodsch.cloud.nextcloud_users:
+    users: "{{ nextcloud_users }}"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+
+  register: nc_status
+
+...

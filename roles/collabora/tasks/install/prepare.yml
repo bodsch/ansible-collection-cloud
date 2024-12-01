@@ -1,0 +1,41 @@
+---
+
+# debian based
+#
+- name: based on debian
+  tags:
+    - collabora_install
+  when:
+    - ansible_os_family | lower == 'debian'
+  block:
+    - name: install tools
+      ansible.builtin.package:
+        state: present
+        name:
+          - gpg
+
+    - name: add collabora apt key
+      ansible.builtin.apt_key:
+        id: 0C54D189F4BA284D
+        keyserver: keyserver.ubuntu.com
+
+    - name: add collabora online repo sources
+      ansible.builtin.apt_repository:
+        filename: collaboraonline.list
+        repo: "deb https://www.collaboraoffice.com/repos/CollaboraOnline/CODE-deb ./"
+        state: present
+        update_cache: true
+
+- name: update package cache
+  ansible.builtin.package:
+    update_cache: true
+
+- name: install requirements
+  ansible.builtin.package:
+    name: "{{ collabora_dependencies | union(collabora_os_dependencies) }}"
+    state: present
+  when:
+    - collabora_dependencies | count > 0 or collabora_os_dependencies | count > 0
+
+- name: get latest system information
+  ansible.builtin.setup:

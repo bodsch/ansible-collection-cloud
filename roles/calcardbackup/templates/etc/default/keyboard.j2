@@ -1,0 +1,12 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+# KEYBOARD CONFIGURATION FILE
+# Consult the keyboard(5) manual page.
+
+XKBMODEL="{{ raspberry_keyboard.model | default('pc105') }}"
+XKBLAYOUT="{{ raspberry_keyboard.layout | default('de') }}"
+XKBVARIANT="{{ raspberry_keyboard.variant | default('') }}"
+XKBOPTIONS="{{ raspberry_keyboard.options | default('') }}"
+
+BACKSPACE="guess"

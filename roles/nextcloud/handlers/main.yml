@@ -1,0 +1,17 @@
+---
+
+- name: daemon reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+    force: true
+  when:
+    - ansible_service_mgr == 'systemd'
+
+- name: restart php-fpm
+  ansible.builtin.service:
+    name: "{{ nextcloud_php_daemon.name }}"
+    state: restarted
+  when:
+    - nextcloud_php_daemon.restart
+
+...

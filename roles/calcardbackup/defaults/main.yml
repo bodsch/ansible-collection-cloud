@@ -1,0 +1,21 @@
+---
+
+calcardbackup_user:
+  group: calcardbackup
+  name: calcardbackup
+  home: /home/calcardbackup
+
+calcardbackup_system:
+  update: true
+  upgrade: false
+
+calcardbackup_jobs:
+  type: cron          # alternative and currently not supported: cron or systemd
+  daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true       # [true, false]
+  cron:
+    minute: ""
+    hour: ""
+    weekday: ""
+
+...

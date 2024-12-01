@@ -1,0 +1,26 @@
+---
+
+galaxy_info:
+  role_name: nextcloud
+  namespace: bodsch
+
+  author: Bodo Schulz
+  description: installs and configure nextcloud
+  license: Apache
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: ArchLinux
+    - name: Debian
+      versions:
+        # 10
+        - buster
+        - bullseye
+
+  galaxy_tags:
+    - nextcloud
+    - cloud
+
+dependencies: []
+
+...

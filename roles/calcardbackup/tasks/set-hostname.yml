@@ -1,0 +1,57 @@
+---
+
+- block:
+    - name: 'update the hostname (pt. 1) - hostname cmd'
+      become: true
+      ignore_errors: true
+      hostname:
+        name: '{{ inventory_hostname }}'
+      register:
+        __hostname_changed_1
+
+    - name: 'update the hostname (pt. 2) - hostnamectl'
+      become: true
+      ignore_errors: true
+      shell: |
+        hostnamectl set-hostname {{ inventory_hostname }} --static
+      when:
+        - ansible_service_mgr == 'systemd'
+
+    - name: 'update the hostname (pt. 3) - (/etc/hostname)'
+      become: true
+      copy:
+        content: "{{ inventory_hostname }}{{'\n'}}"
+        dest: /etc/hostname
+        owner: root
+        group: root
+        mode: 0644
+      register:
+        __hostname_changed_3
+
+    # Set the hostname in /etc/hosts too
+    - name: set hostname into /etc/hosts
+      become: yes
+      command: sed -i "s/127.0.1.1.*calcardbackuppi/127.0.1.1\t{{ inventory_hostname }}/g" /etc/hosts
+
+    - name: "reboot server for enable fqdn"
+      shell: sleep 2 && reboot
+      async: 1
+      poll: 0
+      ignore_errors: true
+      when: (
+          __hostname_changed_1.changed or
+          __hostname_changed_3.changed )
+
+    - name: "Wait for the reboot to complete if there was a change."
+      wait_for_connection:
+        connect_timeout: 20
+        sleep: 5
+        delay: 5
+        timeout: 300
+      when: (
+          __hostname_changed_1.changed or
+          __hostname_changed_3.changed )
+
+  tags:
+    - configuration
+

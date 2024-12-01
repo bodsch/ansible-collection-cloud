@@ -1,0 +1,81 @@
+---
+
+nextcloud_version: 29.0.7
+
+# switch between
+# releases      : https://download.nextcloud.com/server/releases/nextcloud-28.0.1.zip
+# prereleases   : https://download.nextcloud.com/server/prereleases/nextcloud-28.0.2rc1.zip
+# daily         : https://download.nextcloud.com/server/daily/nextcloud-28-daily-2024-01-18.zip
+#                 https://download.nextcloud.com/server/daily/nextcloud-master-daily-2024-01-18.zip
+# default = releases
+nextcloud_release_type: releases
+
+nextcloud_direct_download: false
+
+nextcloud_release: {}
+
+nextcloud_install_base_directory: /var/www
+
+nextcloud_owner: ""
+nextcloud_group: ""
+
+nextcloud_admin:
+  username: admin
+  password: admin
+  email: admin@molecule.lan
+
+nextcloud_password_validation:
+  upper_and_lower_case: false
+  special_character: false
+  numeric_character: false
+  length: 10
+
+nextcloud_instande_id: ""
+nextcloud_password_salt: ""
+nextcloud_data_directory: ""
+
+nextcloud_trusted_domains: []
+
+nextcloud_database:
+  type: sqlite
+  name: nextcloud
+  # username: nextcloud
+  # password:
+  # hostname:
+  # port: 3306
+  # schema: nextcloud
+  persistent: false
+
+nextcloud_defaults: {}
+  # language:
+  #   default: en
+  #   # force: en
+  # locale:
+  #   default: en_GB
+  #   # force: en_GB
+  # phone_region: DE
+  # defaultapps:
+  #   - dashboard
+  #   - files
+  # knowledgebase_enabled: true
+
+nextcloud_php_daemon:
+  restart: true
+  name: "{{ php_fpm_daemon }}"
+
+nextcloud_background_jobs:
+  type: cron          # alternative and currently not supported: webcron | ajax , maybe systemd
+  daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true       # [true, false]
+  cron:
+    minute: ""
+    hour: ""
+    weekday: ""
+
+nextcloud_groups: []
+
+nextcloud_users: []
+
+nextcloud_apps: []
+
+...

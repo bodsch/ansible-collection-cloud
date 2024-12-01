@@ -1,0 +1,76 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+OPTIONS="
+  --version \
+{% if collabora_service.pidfile is defined and
+      collabora_service.pidfile | string | length > 0 %}
+  --pidfile {{ collabora_service.pidfile }} \
+{% endif %}
+{% if collabora_service.port is defined and
+      collabora_service.port | string | length > 0 %}
+  --port {{ collabora_service.port }} \
+{% endif %}
+{% if collabora_service.disable_ssl is defined and
+      collabora_service.disable_ssl | string | length > 0 and
+      collabora_service.disable_ssl %}
+  --disable-ssl \
+{% endif %}
+{% if collabora_service.disable_cool_user_checking is defined and
+      collabora_service.disable_cool_user_checking | string | length > 0 and
+      collabora_service.disable_cool_user_checking %}
+  --disable-cool-user-checking \
+{% endif %}
+{% if collabora_service.overrides is defined and
+      collabora_service.overrides | count > 0 %}
+  {% for k, v in collabora_service.overrides.items() %}
+  --override:{{ k }}={{ v }} \
+  {% endfor %}
+{% endif %}
+{% if collabora_service.config_dir is defined and
+      collabora_service.config_dir | string | length > 0 %}
+  --config-dir {{ collabora_service.config_dir }} \
+{% endif %}
+{% if collabora_service.config_file is defined and
+      collabora_service.config_file | string | length > 0 %}
+  --config-file {{ collabora_service.config_file }} \
+{% endif %}
+"
+{#
+usage: coolwsd OPTIONS
+Collabora Online WebSocket server.
+
+--daemon                       Run application as a daemon.
+--umask=mask                   Set the daemon's umask (octal, e.g. 027).
+--pidfile=path                 Write the process ID of the application to
+                               given file.
+--help                         Display help information on command line
+                               arguments.
+--version-hash                 Display product version-hash information and
+                               exit.
+--version                      Display version and hash information.
+--cleanup                      Cleanup jails and other temporary data and
+                               exit.
+--port=port_number             Port number to listen to (default: 9980),
+--disable-ssl                  Disable SSL security layer.
+--disable-cool-user-checking   Don't check whether coolwsd is running under
+                               the user 'cool'.  NOTE: This is insecure, use
+                               only when you know what you are doing!
+-oxmlpath, --override=xmlpath  Override any setting by providing full
+                               xmlpath=value.
+--config-file=path             Override configuration file path.
+--config-dir=path              Override extra configuration directory path.
+--lo-template-path=path        Override the LOK core installation directory
+                               path.
+--unattended                   Unattended run, won't wait for a debugger on
+                               faulting.
+--signal                       Send signal SIGUSR2 to parent process when
+                               server is ready to accept connections
+--use-env-vars                 Use the environment variables defined on
+                               https://sdk.collaboraonline.com/docs/installati
+                               n/CODE_Docker_image.html#setting-the-applicatio
+                               -configuration-dynamically-via-environment-vari
+                               bles to set options. 'DONT_GEN_SSL_CERT' is
+                               forcibly enabled and 'extra_params' is ignored
+                               even when using this option.
+#}

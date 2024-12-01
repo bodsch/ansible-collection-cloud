@@ -1,0 +1,27 @@
+---
+
+collabora_version: ""
+
+collabora_user_default: cool
+
+collabora_service: {}
+
+collabora_config: {}
+
+collabora_tls_certificate:
+  source_files:
+    cert: ""
+    ca: ""
+    key: ""
+
+collabora_arch:
+  install_type: source   # source | archive | repository
+  source_repository: https://github.com/bodsch/aur-collabora-online-server.git
+  archive: "https://github.com/bodsch/aur-collabora-online-server/releases/download/24.04.7.1/collabora-online-server-24.04.7.1-1-x86_64.pkg.tar.zst"
+  packages:
+    - collabora-online-server
+    - collabora-online-server_de
+
+collabora_direct_download: false
+
+...

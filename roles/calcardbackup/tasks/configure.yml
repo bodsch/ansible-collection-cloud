@@ -1,0 +1,54 @@
+---
+
+# Configure /etc/locale.gen values
+- name: configure option values in /etc/locale.gen file.
+  become: true
+  template:
+    src: etc/locale.gen.j2
+    dest: /etc/locale.gen
+    mode: 0644
+  notify:
+    - generate locale
+    - set default locale
+
+# set /etc/timezone
+- name: set /etc/timezone
+  template:
+    src: etc/timezone.j2
+    dest: /etc/timezone
+# notify: update tzdata
+
+# set /etc/default/keyboard
+- name: set /etc/default/keyboard
+  template:
+    src: etc/default/keyboard.j2
+    dest: /etc/default/keyboard
+
+- name: set /etc/default/locale
+  template:
+    src: etc/default/locale.j2
+    dest: /etc/default/locale
+
+- name: define ansible hostname
+  set_fact:
+    real_ansible_host: "{{ ansible_host }}"
+
+- name: configure wpa_supplicant
+  template:
+    src: etc/wpa_supplicant/wpa_supplicant.conf.j2
+    dest: /etc/wpa_supplicant/wpa_supplicant.conf
+    mode: 0600
+
+- name: configure static IP
+  template:
+    src: etc/dhcpcd.conf.j2
+    dest: /etc/dhcpcd.conf
+    mode: 0750
+
+- name: set password for user pi
+  user:
+    name: pi
+    password: "{{ calcardbackup_users['pi'].password }}"
+  when:
+    - calcardbackup_users is defined
+    - calcardbackup_users['pi'].password is defined

@@ -1,0 +1,16 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+ctrl_interface=DIR={{ raspberry_wpa_supplication.ctrl_interface.dir }} GROUP={{ raspberry_wpa_supplication.ctrl_interface.group }}
+update_config={{ raspberry_wpa_supplication.update_config | default(True) | bool | ternary('1','0') }}
+country={{ raspberry_wpa_supplication.country | default('DE') }}
+
+{% if raspberry_wpa_supplication.networks is defined %}
+  {% for net in raspberry_wpa_supplication.networks %}
+network={
+  ssid="{{ net.ssid }}"
+  psk="{{ net.psk }}"
+}
+
+  {% endfor %}
+{% endif %}

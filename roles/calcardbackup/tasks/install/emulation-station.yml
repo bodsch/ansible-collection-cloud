@@ -1,0 +1,19 @@
+---
+
+- name: Install and configure EmulationStation
+  ansible.builtin.command: "{{ item }}"
+  # become: true
+  # become_user: "{{ calcardbackup_user.name }}"
+  args:
+    chdir: "{{ calcardbackup_user.home }}/setup"
+  with_items:
+    - ./retropie_packages.sh emulationstation depends
+    - ./retropie_packages.sh emulationstation
+    #- ./retropie_packages.sh emulationstation install
+    #- ./retropie_packages.sh emulationstation configure
+    - ./retropie_packages.sh esthemes install_theme
+    - ./retropie_packages.sh autostart enable
+  loop_control:
+    label: "{{  item }}"
+  tags:
+    - debug

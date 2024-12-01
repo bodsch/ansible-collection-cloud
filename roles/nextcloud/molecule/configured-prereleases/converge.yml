@@ -1,0 +1,11 @@
+---
+
+- name: converge
+  hosts: instance
+  any_errors_fatal: false
+
+  roles:
+    # - role: nginx
+    # - role: php-fpm
+    # - role: composer
+    - role: bodsch.cloud.nextcloud

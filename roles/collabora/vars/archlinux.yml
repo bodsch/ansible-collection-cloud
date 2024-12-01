@@ -1,0 +1,14 @@
+---
+
+collabora_dependencies:
+  - unzip
+  - tar
+  - bzip2
+
+collabora_packages:
+  - coolwsd
+  - code-brand
+
+# collabora_dependencies: []
+
+...

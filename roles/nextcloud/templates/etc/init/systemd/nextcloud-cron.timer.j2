@@ -1,0 +1,13 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description         = Run Nextcloud cron.php every 5 minutes
+
+[Timer]
+OnBootSec           = 5min
+OnUnitActiveSec     = 5min
+Unit                = nextcloud-cron.service
+
+[Install]
+WantedBy            = timers.target

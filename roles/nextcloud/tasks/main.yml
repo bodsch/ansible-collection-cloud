@@ -1,0 +1,24 @@
+---
+
+- name: prepare
+  ansible.builtin.include_tasks: prepare.yml
+  tags:
+    - nextcloud_prepare
+    - nextcloud_configure
+
+- name: download
+  ansible.builtin.include_tasks: download.yml
+  tags:
+    - nextcloud_download
+
+- name: install
+  ansible.builtin.include_tasks: install.yml
+  tags:
+    - nextcloud_install
+
+- name: configure
+  ansible.builtin.include_tasks: configure/main.yml
+  tags:
+    - nextcloud_configure
+
+...

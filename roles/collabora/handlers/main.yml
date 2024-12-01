@@ -1,0 +1,16 @@
+---
+
+- name: restart service
+  ansible.builtin.service:
+    name: coolwsd
+    state: restarted
+
+- name: daemon-reload
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    force: true
+  when:
+    - ansible_service_mgr | lower == "systemd"
+
+...

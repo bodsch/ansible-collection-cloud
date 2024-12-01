@@ -1,0 +1,28 @@
+---
+
+calcardbackup_dependencies:
+  - gnupg2
+
+calcardbackup_defaults_config:
+  nextcloud_path: ""
+  nextcloud_url: ""
+  trustful_certificate: true
+  users_file: ""
+  backupfolder: "/srv/backup/"
+  date_extension: "-%Y-%m-%d"
+  keep_days_like_time_machine: "2"
+  delete_backups_older_than: "2"
+  compress: true
+  compression_method: "tar.gz"
+  encrypt_backup: false
+  gpg_passphrase: ""
+  backup_addressbooks: true
+  backup_calendars: true
+  include_shares: true
+  snap: false
+  one_file_per_component: false
+  read_mysql_optionfiles: true
+  temporary_directory: ""
+  mask: ""
+
+...

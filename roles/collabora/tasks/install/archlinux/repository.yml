@@ -1,0 +1,9 @@
+---
+
+- name: install collabora packages
+  ansible.builtin.package:
+    name: "{{ collabora_arch.packages }}"
+    state: present
+  register: _collabora_installed
+
+...

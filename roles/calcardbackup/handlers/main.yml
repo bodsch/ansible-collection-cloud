@@ -1,0 +1,14 @@
+---
+
+# Generate Locale
+- name: generate locale
+  become: true
+  command: locale-gen {{ calcardbackup_locale.default }}
+
+# Set Locale
+- name: set default locale
+  become: true
+  command: |
+    update-locale LC_ALL={{ calcardbackup_locale.default }} LANG={{ calcardbackup_locale.default }}
+
+...

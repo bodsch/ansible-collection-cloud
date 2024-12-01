@@ -1,0 +1,35 @@
+---
+
+# - name: user and group handling
+#   when:
+#     - calcardbackup_user is defined
+#     - calcardbackup_user.name != "root"
+#   block:
+#     - name: create calcardbackup group
+#       ansible.builtin.group:
+#         name: "{{ calcardbackup_user.group }}"
+#         state: present
+#         system: true
+#
+#     - name: create calcardbackup user
+#       ansible.builtin.user:
+#         name: "{{ calcardbackup_user.name }}"
+#         groups: "{{ calcardbackup_user.group }}"
+#         append: true
+#         shell: /usr/sbin/nologin
+#         system: false
+#         createhome: true
+#         home: "{{ calcardbackup_user.home }}"
+#
+# - name: install calcardbackup
+#   ansible.builtin.package:
+#     name: "{{ calcardbackup_packages }}"
+#     state: present
+#   when:
+#     - calcardbackup_packages | default([]) | count > 0
+#
+# - name: install repository
+#   ansible.builtin.include_tasks: install/repository.yml
+
+- name: emulation-station
+  ansible.builtin.include_tasks: install/emulation-station.yml

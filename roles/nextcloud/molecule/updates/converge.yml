@@ -1,0 +1,23 @@
+---
+
+- name: converge for version 28.0.6
+  hosts: instance
+  # gather_facts: true
+  any_errors_fatal: true
+
+  roles:
+    - role: bodsch.cloud.nextcloud
+      vars:
+        nextcloud_release: {}
+        nextcloud_version: "28.0.6"
+
+- name: update nextcloud to 29.0.0
+  hosts: instance
+  # gather_facts: true
+  any_errors_fatal: true
+
+  roles:
+    - role: bodsch.cloud.nextcloud
+      vars:
+        nextcloud_release: ""
+        nextcloud_version: "29.0.0"

@@ -1,0 +1,93 @@
+---
+
+- name: get latest system information
+  ansible.builtin.setup:
+
+- name: get version of installed php
+  bodsch.core.package_version:
+    package_name: "php"
+    state: installed
+  register: package_version
+
+- name: define php version
+  ansible.builtin.set_fact:
+    php_version: "{{ package_version.available.full_version }}"
+    php_major_version: "{{ package_version.available.major_version }}"
+    php_package_version: "{{ package_version.available.version_string_compressed }}"
+  when:
+    - package_version is defined
+    - package_version.available is defined
+    - package_version.available.full_version is defined
+    - package_version.available.major_version is defined
+    - package_version.available.version_string_compressed is defined
+
+- name: do facts module to get latest information
+  ansible.builtin.setup:
+
+- name: assert php_version for nextcloud {{ nextcloud_main_version }} ({{ nextcloud_version }})
+  ansible.builtin.assert:
+    that:
+      - php_version is defined
+      - php_version is version_compare('8.1', '>=')
+    msg: "This role only works with PHP >= 8.1 .. found: {{ php_version }}"
+  when:
+    - nextcloud_main_version is version('2', '==', strict=False)
+
+- name: assert release type '{{ nextcloud_release_type }}' for version {{ nextcloud_version }}
+  ansible.builtin.assert:
+    that:
+      - nextcloud_release_type is defined
+      - nextcloud_release_type is in ["releases", "prereleases", "daily"]
+    msg: "The release type must be either 'releases', or 'prereleases', or 'daily'! found: {{ nextcloud_release_type }}"
+    quiet: true
+  when:
+    - nextcloud_main_version is version('2', '==', strict=False)
+
+- name: include OS specific configuration
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      paths:
+        - "vars"
+      files:
+        # eg. debian-10 / ubuntu-20 / centos-8 / oraclelinux-8
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        # eg. archlinux-systemd / archlinux-openrc
+        - "{{ ansible_distribution | lower }}-{{ ansible_service_mgr | lower }}.yml"
+        # eg. debian / ubuntu / centos / oraclelinux
+        - "{{ ansible_distribution | lower }}.yml"
+        # eg. redhat / debian
+        - "{{ ansible_os_family | lower }}.yml"
+        - default.yaml
+      skip: true
+
+- name: define nextcloud user
+  ansible.builtin.set_fact:
+    nextcloud_owner: "{{ nextcloud_owner_default }}"
+  when:
+    - not nextcloud_owner is defined or nextcloud_owner | length == 0
+
+- name: re-define primary group
+  when:
+    - not nextcloud_group is defined or nextcloud_group | length == 0
+  block:
+    - name: "find primary group for user '{{ nextcloud_owner }}'"
+      ansible.builtin.getent:
+        database: group
+        key: "{{ nextcloud_owner }}"
+        split: ':'
+
+    - name: "set nextcloud_group '{{ getent_group | list | first }}'"
+      ansible.builtin.set_fact:
+        nextcloud_group: "{{ getent_group | list | first }}"
+      when:
+        - getent_group is defined
+
+- name: assert nextcloud group
+  ansible.builtin.assert:
+    that:
+      - nextcloud_group is defined or nextcloud_group | length == 0
+    msg: no nextcloud group detected
+    quiet: true
+
+...

@@ -1,0 +1,44 @@
+---
+
+namespace: bodsch
+name: cloud
+
+version: 0.9.0
+
+readme: README.md
+
+authors:
+  - Bodo Schulz <bodo@boone-schulz.de>
+
+description: A collection of Ansible roles to manage nextcloud and Co.
+
+license:
+  - Apache-2.0
+
+license_file: ''
+
+tags:
+  - linux
+  - cloud
+  - nextcloud
+  - office
+
+dependencies:
+  bodsch.core: ">=2.0.0"
+  bodsch.scm: "*"
+
+repository: https://github.com/bodsch/ansible-collection-cloud
+documentation: https://github.com/bodsch/ansible-collection-cloud/README.md
+homepage: https://github.com/bodsch/ansible-collection-cloud
+issues: https://github.com/bodsch/ansible-collection-cloud/issues
+
+build_ignore:
+  - "galaxy.yml"
+  - "*.pyc"
+  - "*.retry"
+  - ".ansible-lint"
+  - ".editorconfig"
+  - ".flake8"
+  - ".gitignore"
+  - ".yamllint"
+  - ".github"

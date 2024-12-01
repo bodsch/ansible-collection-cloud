@@ -1,0 +1,258 @@
+---
+
+collabora_main_version: "{{ collabora_version[0:1] }}"
+
+collabora_delegate_to: localhost
+
+collabora_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/collabora', true) }}/{{ collabora_version }}"
+
+collabora_cache_directory: /var/cache/ansible/collabora
+
+collabora_remote_tmp_directory: "{{ collabora_cache_directory }}/{{ collabora_version }}"
+
+collabora_os_dependencies: []
+
+collabora_dependencies:
+  - unzip
+  - tar
+  - bzip2
+  - gpg
+
+collabora_python_packages:
+  # - name: mysqlclient
+  - name: dirsync
+
+collabora_packages: []
+
+collabora_defaults_service:
+  pidfile: ""
+  port: ""
+  disable_ssl: true
+  disable_cool_user_checking: true
+  # defaults:
+  # sys_template_path=/opt/cool/systemplate
+  # child_root_path=/opt/cool/child-roots
+  # file_server_root_path=/usr/share/coolwsd
+  overrides:
+    sys_template_path: /opt/cool/systemplate
+    child_root_path: /opt/cool/child-roots
+    file_server_root_path: /usr/share/coolwsd
+  config_file: ""
+  config_dir: ""
+  lo_template_path: ""
+
+collabora_defaults_config:
+  # The languages allowed.
+  allowed_languages: []
+
+  cache_path: /var/cache/loolwsd
+  # You can manage the mounting feature. Either "false" or "true". (As a string.)
+  mount_jail_tree: "true"
+
+  # Remote API settings for spell and grammar checking
+  languagetool:
+    enable: false
+    base_url: ""
+    user_name: ""
+    api_key:
+    ssl_verification:
+    rest_protocol: ""
+
+  # DeepL API settings for translation service
+  deepl:
+    enable: false
+    api_url: ""
+    auth_key: ""
+
+  # External hostname:port of the server running coolwsd
+  server_name: ""
+  # Enable/Disable experimental features
+  experimental_features: true
+  # The maximum percentage of available memory consumed by all of the Collabora Online processes
+  memproportion: "80.0"
+  # Number of child processes to keep started in advance and waiting for new clients
+  num_prespawn_children: "1"
+  # Every number of hours will fetch latest version data
+  fetch_update_check: "10"                      # hours
+
+  logging:
+    color: true
+    # Set the log level. Can be 0 through 8, none or "fatal", "critical", "error",
+    # "warning", "notice", "information", "debug", "trace".
+    level: information
+    startup: information
+    most_verbose: notice
+    least_verbose: fatal
+    file:
+      enable: false
+      path: /var/log/coolwsd.log
+      rotation: never
+      archive: timestamp
+      compress: true
+      purge:
+        days: 10
+        count: 10
+      rotate_on_open: true
+      flush: false
+
+    anonymize:
+      user_data: true
+      salt: ""                                    # A secret 64-bit random number (default: 82589933)
+    docstats: false
+    userstats: false
+  #
+  trace_event:
+    enable: false
+    path: /var/log/coolwsd.trace.json
+  #
+  network:
+    # Protocol to use IPv4, IPv6 or all for both
+    proto: IPv4
+    # Listen address that coolwsd binds to. Can be 'any' or 'loopback'.
+    listen: loopback
+    # Allow/deny client IP address for POST(REST).
+    post_allow:
+      hosts: []
+        # - description: "The IPv4 private 10.0.0.0/8 subnet (Podman)."
+        #   network: '10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+        # - description: "Ditto, but as IPv4-mapped IPv6 addresses"
+        #   network: '::ffff:10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+
+    # Allowed hosts as an external data source inside edited files.
+    # All allowed post_allow.host and storage.wopi entries are also considered to be
+    # allowed as a data source.
+    # Used for example in: PostMessage Action_InsertGraphics, =WEBSERVICE() function, external reference in the cell.
+    lok_allow:
+      hosts: []
+        # - description: "Localhost access by name"
+        #   network: 'localhost'
+    content_security_policy: ""
+    connection_timeout_secs: 30
+  #
+  ssl:
+    # Controls whether SSL encryption between coolwsd and the network is enabled (do not disable for production deployment).
+    # If default is false, must first be compiled with SSL support to enable.
+    enabled: false
+    # Connection via proxy where coolwsd acts as working via https, but actually uses http.
+    termination: false
+    # These settings become relevant when `collabora_ssl_enabled` is set to
+    # `yes`.
+    cert_file: /etc/coolwsd/cert.pem
+    key_file: /etc/coolwsd/key.pem
+    ca_file: /etc/coolwsd/ca-chain.cert.pem
+    cipher_list:
+      - "ALL"
+      - "!ADH"
+      - "!LOW"
+      - "!EXP"
+      - "!MD5"
+      - "@STRENGTH"
+    # Enable HTTP Public key pinning
+    hpkp:
+      enable: false
+      report_only: false
+      # HPKP's max-age directive - time in seconds browser should remember the pins
+      max_age: 1000
+      # HPKP's report-uri directive - pin validation failure are reported at this URL
+      report_enable: false
+      report_uri:
+      # Base64 encoded SPKI fingerprints of keys to be pinned
+      pins: []
+    # Strict-Transport-Security settings, per rfc6797. Subdomains are always included.
+    sts:
+      # Whether or not Strict-Transport-Security is enabled. Enable only when ready for production. Cannot be disabled without resetting the browsers.
+      enabled: false
+      # Strict-Transport-Security max-age directive, in seconds. 0 is allowed; please see rfc6797 for details. Defaults to 1 year.
+      max_age: 31536000
+  #
+  security:
+    seccomp: ""
+    capabilities: ""
+    jwt_expiry_secs: ""
+    enable_macros_execution: ""
+    macro_security_level: ""
+    enable_websocket_urp: ""
+    enable_metrics_unauthenticated: ""
+  #
+  watermark:
+    opacity: ""
+    text: ""
+  #
+  user_interface:
+    # Controls the user interface style.
+    # The 'default' means: Take the value from ui_defaults, or decide for one of compact or tabbed (default|compact|tabbed)
+    mode: ""
+    # Use theme from the integrator
+    use_integration_theme: true
+  #
+  storage:
+    filesystem:
+      allow: false
+    hosts: []
+      #   - description: ""
+      #     allow: ""
+      #     host: ""
+    wopi:
+      allow: true
+      # Maximum document size in bytes to load. 0 for unlimited.
+      max_file_size: 0
+      locking:
+        refresh: 900
+      alias_groups:
+        mode: "first"          # default mode is 'first' /  set mode to 'groups' and define group to allow multiple host
+        groups: []
+      #   - description: ""
+      #     allow: ""
+      #     host: ""
+      #     aliases: []
+    ssl:
+      # When set we exclusively use the WOPI URI's scheme to enable SSL for storage
+      as_schema: true
+      # If as_scheme is false or not set, this can be set to force SSL encryption between storage and coolwsd.
+      # When empty this defaults to following the ssl.enable setting
+      enable: ""
+      # Path to the cert file
+      cert_file: /etc/coolwsd/cert.pem
+      # Path to the key file
+      key_file: /etc/coolwsd/key.pem
+      # Path to the ca file. If this is not empty, then SSL verification will be strict, otherwise cert of storage (WOPI-like host) will not be verified.
+      ca_file: /etc/coolwsd/ca-chain.cert.pem
+      # List of OpenSSL ciphers to accept. If empty the defaults are used. These can be overridden only if absolutely needed.
+      cipher_list: []
+  #
+  admin_console:
+    enable: true
+    # Enable admin user authentication with PAM
+    enable_pam: false
+    # The username of the admin console. Ignored if PAM is enabled.
+    username: "admin"
+    # The password of the admin console. Deprecated on most platforms. Instead, use PAM or coolconfig to set up a secure password.
+    password: "50m3-53cu23-p455w02d."
+    # Log admin activities irrespective of logging.level
+    logging:
+      # log when an admin logged into the console
+      admin_login: true
+      # log when metrics endpoint is accessed and metrics endpoint authentication is enabled
+      metrics_fetch: true
+      # log when external monitor gets connected
+      monitor_connect: true
+      # log when admin does some action for example killing a process
+      admin_action: true
+
+collabora_defaults_directory: /etc/default
+
+# ---------------------------------------------
+
+go_arch_map:
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+  armv6l: 'armv6'
+
+system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system
+
+...

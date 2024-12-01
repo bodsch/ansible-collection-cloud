@@ -1,0 +1,114 @@
+---
+
+- name: merge nextcloud configuration between defaults and custom
+  ansible.builtin.set_fact:
+    nextcloud_database: "{{ nextcloud_defaults_database | combine(nextcloud_database, recursive=True) }}"
+    nextcloud_defaults: "{{ nextcloud_defaults_defaults | combine(nextcloud_defaults, recursive=True) }}"
+
+- name: nextcloud custom data directory
+  when:
+    - nextcloud_defaults.data_directory is defined
+    - nextcloud_defaults.data_directory | string | length > 0
+  block:
+    - name: create custom data directory
+      ansible.builtin.file:
+        state: directory
+        mode: "0770"
+        owner: "{{ nextcloud_owner }}"
+        group: "{{ nextcloud_group }}"
+        path: "{{ nextcloud_defaults.data_directory }}"
+
+    - name: create .ocdata in custom data directory
+      ansible.builtin.copy:
+        dest: "{{ nextcloud_defaults.data_directory }}/.ocdata"
+        content: ""
+        mode: "0660"
+        owner: "{{ nextcloud_owner }}"
+        group: "{{ nextcloud_group }}"
+
+- name: install nextcloud with base configuration
+  bodsch.cloud.nextcloud_occ:
+    command: "maintenance:install"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+    data_dir: "{{ nextcloud_defaults.data_directory }}"
+    database:
+      type: "{{ nextcloud_database.type }}"
+      hostname: "{{ nextcloud_database.hostname | default(omit) }}"
+      port: "{{ nextcloud_database.port | default(omit) }}"
+      schema: "{{ nextcloud_database.schema | default(omit) }}"
+      username: "{{ nextcloud_database.username | default(omit) }}"
+      password: "{{ nextcloud_database.password | default(omit) }}"
+    admin:
+      username: "{{ nextcloud_admin.username | default('admin') }}"
+      password: "{{ nextcloud_admin.password | default('admin') }}"
+  register: nc_status
+
+- name: installation state  # noqa no-handler
+  ansible.builtin.debug:
+    msg: "{{ nc_status }}"
+  when:
+    - nc_status.changed
+
+- name: custom data directory
+  when:
+    - nc_status.changed
+    - nextcloud_defaults.data_directory is defined
+    - nextcloud_defaults.data_directory | string | length > 0
+  block:
+    - name: sync {{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/data to {{ nextcloud_defaults.data_directory }}
+      bodsch.core.sync_directory:
+        source_directory: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/data"
+        destination_directory: "{{ nextcloud_defaults.data_directory }}"
+        arguments:
+          verbose: true
+          purge: false
+      when:
+        - nextcloud_defaults.data_directory is defined
+        - nextcloud_defaults.data_directory | string | length > 0
+
+    - name: fix rights and ownership
+      ansible.builtin.file:
+        path: "{{ nextcloud_defaults.data_directory }}"
+        owner: "{{ nextcloud_owner }}"
+        group: "{{ nextcloud_group }}"
+        recurse: true
+
+- name: write nextcloud import configuration
+  bodsch.cloud.nextcloud_config:
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+    group: "{{ nextcloud_group }}"
+    diff_output: false
+    config_parameters: "{{ nextcloud_defaults }}"
+    trusted_domains: "{{ nextcloud_trusted_domains }}"
+    database:
+      type: "{{ nextcloud_database.type }}"
+      hostname: "{{ nextcloud_database.hostname | default(omit) }}"
+      port: "{{ nextcloud_database.port | default(omit) }}"
+      schema: "{{ nextcloud_database.schema | default(omit) }}"
+      username: "{{ nextcloud_database.username | default(omit) }}"
+      password: "{{ nextcloud_database.password | default(omit) }}"
+  register: nc_config
+
+- name: configuration state  # noqa no-handler
+  ansible.builtin.debug:
+    msg: "{{ nc_config }}"
+  when:
+    - nc_config.changed
+
+- name: manage nextcloud background jobs
+  ansible.builtin.include_tasks: background_jobs.yml
+  when:
+    - nextcloud_background_jobs.type | default('') |  string | lower in ["cron", "ajax", "webcron", "systemd"]
+
+- name: manage nextcloud groups
+  ansible.builtin.include_tasks: groups.yml
+
+- name: manage nextcloud users
+  ansible.builtin.include_tasks: users.yml
+
+- name: manage nextcloud apps
+  ansible.builtin.include_tasks: apps.yml
+
+...

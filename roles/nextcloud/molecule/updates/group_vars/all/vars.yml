@@ -1,0 +1,15 @@
+---
+
+# nextcloud_version: "28.0.1"
+
+nextcloud_install_base_directory: /var/www
+
+nextcloud_trusted_domains:
+  - nextcloud.molecule.lan
+  - nextcloud.molecule.local
+  - molecule.docker.local
+
+
+# "overwrite.cli.url": "http:\/\/localhost",
+
+...

@@ -1,0 +1,21 @@
+---
+
+php_fpm_daemon: php-fpm
+
+nextcloud_owner_default: http
+
+nextcloud_dependencies:
+  - python-pip
+  - php-intl
+  - php-gd
+
+nextcloud_php_packages:
+  redis:
+    - php-redis
+  memcache:
+    - php-memcached
+  sqlite:
+    - php-sqlite
+  #mysql:
+  #  - php{{ php_version }}-mysql
+...

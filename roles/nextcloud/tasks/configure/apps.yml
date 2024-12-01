@@ -1,0 +1,38 @@
+---
+
+- name: nextcloud apps - install app
+  bodsch.cloud.nextcloud_apps:
+    apps: "{{ nextcloud_apps }}"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_apps_that_have_been_installed
+
+- name: nextcloud apps - check for updates
+  bodsch.cloud.nextcloud_update_apps:
+    state: "check"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_list_of_apps_that_can_be_updated
+
+# - name: list app updates
+#   debug:
+#     msg: "{{ nc_list_of_apps_that_can_be_updated.applications }}"
+#   when:
+#     - nc_list_of_apps_that_can_be_updated.updates
+
+- name: nextcloud apps - perform updates
+  bodsch.cloud.nextcloud_update_apps:
+    state: "update"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_result_of_the_apps_that_have_been_updated
+  when:
+    - nc_list_of_apps_that_can_be_updated.updates
+
+# - name: show result of the update process
+#   debug:
+#     msg: "{{ nc_result_of_the_apps_that_have_been_updated.state }}"
+#   when:
+#     - nc_result_of_the_apps_that_have_been_updated.state is defined
+
+...

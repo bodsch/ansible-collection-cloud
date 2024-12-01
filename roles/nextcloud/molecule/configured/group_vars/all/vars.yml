@@ -1,0 +1,116 @@
+---
+
+nextcloud_version: 30.0.0
+
+nextcloud_install_base_directory: /var/www/nextcloud.molecule.lan
+
+nextcloud_instande_id: oczgldo770me
+
+nextcloud_trusted_domains:
+  - nextcloud.molecule.lan
+  - nextcloud.molecule.local
+
+nextcloud_password_salt: cpkxiYp1+qP2YQBGHBz+Tyxq5hzK3D
+nextcloud_secret: '0Yvgwz56NtIYLL1t6+5DhUuUA1HZCbl7ojaLLOQQMZN4kYM3'
+
+nextcloud_defaults:
+  phone_region: DE
+
+  data_directory: "/var/www/nc_data"
+
+  logging:
+    type: 'file'
+    file: '/var/log/nextcloud/nextcloud.log'
+    logfile_audit: '/var/log/nextcloud/audit.log'
+    level: 1
+  # not stable yet
+  # apps:
+  #   paths:
+  #     - path: '{{ nextcloud_install_base_directory }}/nextcloud/server/apps'
+  #       url: '/apps'
+  #       writable: false
+  #     - path: '{{ nextcloud_install_base_directory }}/nextcloud/apps-external'
+  #       url: '/apps-external'
+  #       writable: true
+
+nextcloud_background_jobs:
+  type: 'systemd'
+  daemon: ""      # {{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true
+  cron:
+    minute: "*/5"
+    hour: ""
+    weekday: ""
+
+nextcloud_groups:
+  - name: test
+    display_name: "Testing with spaces"
+    state: present
+  - name: test2
+    state: absent
+
+nextcloud_users:
+  - name: bodsch
+    password: "{{ vault__users.bodsch }}"
+    display_name: Bod Sch
+    groups:
+      - test
+    settings:
+      - settings:
+          display_name: Bodo Schulz
+          email: "bodsch@molecule.lan"
+
+  - name: molecule
+    password: "{{ vault__users.molecule }}"
+    display_name: Molecule Tester
+    groups:
+      - test
+    settings:
+      - settings:
+          email: "molecule@matrix.lan"
+      - notifications:
+          - sound_notification: true
+      - firstrunwizard:
+          show: 0
+      - calendar:
+          showWeekNr: true
+
+  - name: alice
+    password: "{{ vault__users.alice }}"
+    display_name: Alice B. Charlie
+    groups:
+      - test
+      - test2
+      - foo
+      - bar
+
+  - name: honk
+    password: "{{ vault__users.honk }}"
+    state: absent
+    resetpassword: true
+    display_name: Honk
+    groups:
+      - test
+
+nextcloud_apps:
+  - name: calendar
+    state: enabled
+  - name: tasks
+    state: enabled
+  - name: deck
+    state: enabled
+  - name: contacts
+    state: enabled
+  - name: forms
+    state: enabled
+  - name: groupfolders
+    state: enabled
+  - name: recognize
+    state: enabled
+  - name: mail
+    state: absent
+    settings:
+      antispam_reporting_ham: ""
+      antispam_reporting_spam: ""
+
+...

@@ -1,0 +1,6 @@
+---
+
+collabora_arch:
+  install_type: archive   # source | archive | repository
+  archive: "https://github.com/bodsch/aur-collabora-online-server/releases/download/24.04.7.1/collabora-online-server-24.04.7.1-1-x86_64.pkg.tar.zst"
+...

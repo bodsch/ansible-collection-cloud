@@ -1,0 +1,101 @@
+---
+
+collabora_service:
+  #pidfile: ""
+  #port: ""
+  disable_ssl: false
+  disable_cool_user_checking: false
+  # defaults:
+  # sys_template_path=/opt/cool/systemplate
+  # child_root_path=/opt/cool/child-roots
+  # file_server_root_path=/usr/share/coolwsd
+  # overrides:
+  #   sys_template_path: /opt/cool/systemplate
+  #   child_root_path: /opt/cool/child-roots
+  #   file_server_root_path: /usr/share/coolwsd
+  # config_file: ""
+  # config_dir: ""
+  # lo_template_path: ""
+
+collabora_tls_certificate:
+  source_files:
+    cert: "/etc/snakeoil/molecule.lan/molecule.lan.pem"
+    ca: "/etc/snakeoil/molecule.lan/molecule.lan.pem"
+    key: "/etc/snakeoil/molecule.lan/molecule.lan.key"
+
+collabora_config:
+  server_name: office.molecule.lan
+  allowed_languages:
+    - "de_DE"
+    - "en_GB"
+    - "en_US"
+
+  network:
+    # Protocol to use IPv4, IPv6 or all for both
+    proto: all
+    # Listen address that coolwsd binds to. Can be 'any' or 'loopback'.
+    listen: any
+    # Allow/deny client IP address for POST(REST).
+    post_allow:
+      hosts: []
+        # - description: "The IPv4 private 10.0.0.0/8 subnet (Podman)."
+        #   network: '10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+        # - description: "Ditto, but as IPv4-mapped IPv6 addresses"
+        #   network: '::ffff:10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+
+    # Allowed hosts as an external data source inside edited files.
+    # All allowed post_allow.host and storage.wopi entries are also considered to be
+    # allowed as a data source.
+    # Used for example in: PostMessage Action_InsertGraphics, =WEBSERVICE() function, external reference in the cell.
+    lok_allow:
+      hosts: []
+        # - description: "Localhost access by name"
+        #   network: 'localhost'
+    content_security_policy: ""
+    connection_timeout_secs: 30
+
+  logging:
+    color: false
+    # Set the log level. Can be 0 through 8, none or "fatal", "critical", "error",
+    # "warning", "notice", "information", "debug", "trace".
+    level: notice
+    startup: debug
+
+    anonymize:
+      user_data: false
+    docstats: false
+    userstats: false
+
+  ssl:
+    # Controls whether SSL encryption between coolwsd and the network is enabled (do not disable for production deployment).
+    # If default is false, must first be compiled with SSL support to enable.
+    enabled: true
+    # Connection via proxy where coolwsd acts as working via https, but actually uses http.
+    termination: true
+    # These settings become relevant when `collabora_ssl_enabled` is set to
+    # `yes`.
+    cert_file: /etc/coolwsd/molecule.lan.pem
+    key_file: /etc/coolwsd/molecule.lan.key
+    ca_file: /etc/coolwsd/molecule.lan.pem
+
+  storage:
+    wopi:
+      # WOPI access
+      alias_groups:
+        mode: "groups"          # default mode is 'first' /  set mode to 'groups' and define group to allow multiple host
+        groups:
+          - description: "Matrix nextcloud (HTTP)"
+            allow: true
+            host: "http://cloud.molecule.lan:80"
+            aliases:
+              - "http://nextcloud.molecule.lan:80"
+          - description: "Matrix nextcloud (HTTPS)"
+            allow: true
+            host: "https://cloud.molecule.lan:443"
+            aliases:
+              - "https://nextcloud.molecule.lan:443"
+              - "https://nextcloud.molecule.local:443"
+              - "https://office.molecule.lan:443"
+              - "https://office.molecule.local:443"
+
+...

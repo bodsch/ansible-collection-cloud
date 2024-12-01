@@ -1,0 +1,50 @@
+---
+
+- name: create download directory
+  become: false
+  delegate_to: "{{ collabora_delegate_to }}"
+  run_once: "{{ 'false' if collabora_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ collabora_local_tmp_directory }}"
+    state: directory
+    mode: "0750"
+
+- name: detect the downloaded collabora archive
+  become: false
+  delegate_to: "{{ collabora_delegate_to }}"
+  run_once: "{{ 'false' if collabora_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ collabora_local_tmp_directory }}/{{ collabora_arch.archive | basename }}"
+  register: stat_collabora_archive
+
+- name: download collabora binary archive
+  when:
+    - stat_collabora_archive.stat is defined
+    - not stat_collabora_archive.stat.exists | default('false')
+  become: false
+  delegate_to: "{{ collabora_delegate_to }}"
+  run_once: "{{ 'false' if collabora_direct_download else 'true' }}"
+  ansible.builtin.get_url:
+    url: "{{ collabora_arch.archive }}"
+    dest: "{{ collabora_local_tmp_directory }}/{{ collabora_arch.archive | basename }}"
+    mode: "0640"
+  register: _download_archive
+  until: _download_archive is succeeded
+  retries: 5
+  delay: 2
+  check_mode: false
+
+- name: propagate collabora binary
+  ansible.builtin.copy:
+    src: "{{ collabora_local_tmp_directory }}/{{ collabora_arch.archive | basename }}"
+    dest: "/tmp/{{ collabora_arch.archive | basename }}"
+    mode: 0755
+    remote_src: "{{ 'true' if collabora_direct_download else 'false' }}"
+
+- name: install collabora packages
+  ansible.builtin.pacman:
+    name: "/tmp/{{ collabora_arch.archive | basename }}"
+    state: present
+  register: _collabora_installed
+
+...

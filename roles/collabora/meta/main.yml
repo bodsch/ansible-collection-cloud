@@ -1,0 +1,27 @@
+---
+
+galaxy_info:
+  role_name: collabora
+  namespace: bodsch
+
+  author: Bodo Schulz
+  description: installs and configure collabora
+  license: Apache
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: Debian
+      versions:
+        # 10
+        - buster
+        - bullseye
+
+  galaxy_tags:
+    - cloud
+    - office
+    - collabora
+    - code
+
+dependencies: []
+
+...

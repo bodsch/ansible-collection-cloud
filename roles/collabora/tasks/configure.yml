@@ -1,0 +1,18 @@
+---
+
+- name: merge collabora configuration between defaults and custom
+  ansible.builtin.set_fact:
+    collabora_config: "{{ collabora_defaults_config | combine(collabora_config, recursive=True) }}"
+
+- name: configure collabora
+  ansible.builtin.template:
+    src: etc/coolwsd/coolwsd.xml.j2
+    dest: /etc/coolwsd/coolwsd.xml
+    owner: "{{ collabora_owner }}"
+    group: "{{ collabora_group }}"
+    mode: "0640"
+    backup: true
+  notify:
+    - restart service
+
+...
