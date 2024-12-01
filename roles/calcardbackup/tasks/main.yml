@@ -1,13 +1,13 @@
 ---
 
 - name: prepare
-  include_tasks: prepare.yml
+  ansible.builtin.include_tasks: prepare.yml
 
 - name: install
-  include_tasks: install/main.yml
+  ansible.builtin.include_tasks: install/main.yml
 
-#- name: configure
- # include_tasks: configure.yml
+- name: configure
+  ansible.builtin.include_tasks: configure.yml
 
-# - name: set hostname
-#  include_tasks: set-hostname.yml
+- name: cron job
+  ansible.builtin.include_tasks: cron_job.yml

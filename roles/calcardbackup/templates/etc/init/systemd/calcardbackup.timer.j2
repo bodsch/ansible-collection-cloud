@@ -1,0 +1,29 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description         = backup of nextcloud databases
+After               = mariadb.service
+
+[Timer]
+# {{ calcardbackup_cron.cron }}
+{% if calcardbackup_cron.cron.minute is defined and
+      calcardbackup_cron.cron.hour is defined and
+      calcardbackup_cron.cron.weekday is defined and
+      calcardbackup_cron.cron.minute | string | length > 0 and
+      calcardbackup_cron.cron.hour | string | length > 0 %}
+{#
+# basic format: * *-*-* *:*:*
+#               |   |     +---- *:*:*    is to signify the time component of the calnedar event. So it is - hour:minute:second
+#               |   +---------- *-*-*    To signify the calendar date. Which means it breaks down to - year-month-date.
+#               +--------------          To signify the day of the week eg:- Sat,Thu,Mon
+#}
+OnCalendar          = {{ calcardbackup_cron.cron.weekday | default('') }} *-*-* {{ calcardbackup_cron.cron.hour | default('2') }}:{{ calcardbackup_cron.cron.minute | default('58') }}:00
+{% else %}
+OnCalendar          = monday 04:00
+{% endif %}
+Persistent          = true
+Unit                = calcardbackup.service
+
+[Install]
+WantedBy            = timers.target

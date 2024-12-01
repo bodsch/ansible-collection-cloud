@@ -1,5 +1,5 @@
  
-# Ansible Role:  `nextcloud`
+# Ansible Role:  `bodsch.cloud.nextcloud`
 
 Ansible role to install and configure nextcloud.
 

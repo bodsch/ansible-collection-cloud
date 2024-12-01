@@ -25,32 +25,4 @@
   when:
     - calcardbackup_dependencies | default([]) | count > 0
 
-# Run apt-get update and apt-get upgrade
-# Depends on: none
-#
-
-# # Update apt packages
-# - name: update apt packages
-#   become: true
-#   apt:
-#     update_cache: true
-#   when:
-#     - calcardbackup_system.update
-#
-# # Upgrade apt packages
-# - name: upgrade apt packages
-#   become: true
-#   apt:
-#     upgrade: dist
-#   when:
-#     - calcardbackup_system.upgrade
-#
-# - name: merge calcardbackup configuration between defaults and custom
-#   set_fact:
-#     calcardbackup_wpa_supplication: "{{ calcardbackup_defaults_wpa_supplication | combine( calcardbackup_wpa_supplication, recursive=True ) }}"
-#     calcardbackup_dhcpcd: "{{ calcardbackup_defaults_dhcpcd | combine( calcardbackup_dhcpcd, recursive=True ) }}"
-#     calcardbackup_console: "{{ calcardbackup_defaults_console | combine( calcardbackup_console, recursive=True ) }}"
-#     calcardbackup_locale: "{{ calcardbackup_defaults_locale | combine( calcardbackup_locale, recursive=True ) }}"
-#     calcardbackup_keyboard: "{{ calcardbackup_defaults_keyboard | combine( calcardbackup_keyboard, recursive=True ) }}"
-
 ...

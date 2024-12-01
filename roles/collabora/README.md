@@ -1,5 +1,5 @@
  
-# Ansible Role:  `collabora`
+# Ansible Role:  `bodsch.cloud.collabora`
 
 Ansible role to install and configure [collabora office](https://www.collaboraoffice.com).
 

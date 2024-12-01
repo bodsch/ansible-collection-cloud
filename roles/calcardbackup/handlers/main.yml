@@ -1,14 +1,20 @@
 ---
 
-# Generate Locale
-- name: generate locale
-  become: true
-  command: locale-gen {{ calcardbackup_locale.default }}
+- name: daemon reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+    force: true
+  when:
+    - ansible_service_mgr == 'systemd'
 
-# Set Locale
-- name: set default locale
-  become: true
-  command: |
-    update-locale LC_ALL={{ calcardbackup_locale.default }} LANG={{ calcardbackup_locale.default }}
+- name: restart calcardbackup service
+  ansible.builtin.service:
+    name: calcardbackup.service
+    state: restarted
+
+- name: restart calcardbackup timer
+  ansible.builtin.service:
+    name: calcardbackup.timer
+    state: restarted
 
 ...

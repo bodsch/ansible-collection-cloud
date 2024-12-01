@@ -1,8 +1,0 @@
----
-
-- name: git clone RetroPie-Setup
-  ansible.builtin.git:
-    repo: https://github.com/RetroPie/RetroPie-Setup.git
-    dest: "{{ calcardbackup_user.home }}/setup"
-    depth: 1
-    version: master

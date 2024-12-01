@@ -1,5 +1,7 @@
 ---
 
+calcardbackup_version: "8.0.2"
+
 calcardbackup_user:
   group: calcardbackup
   name: calcardbackup
@@ -9,13 +11,22 @@ calcardbackup_system:
   update: true
   upgrade: false
 
-calcardbackup_jobs:
+calcardbackup_arch:
+  install_type: archive   # source | archive
+  source_repository: https://codeberg.org/BernieO/calcardbackup.git
+  archive: "https://codeberg.org/BernieO/calcardbackup/archive/v{{ calcardbackup_version }}.tar.gz"
+
+calcardbackup_direct_download: false
+
+calcardbackup_config: {}
+
+calcardbackup_cron:
   type: cron          # alternative and currently not supported: cron or systemd
   daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
   enabled: true       # [true, false]
   cron:
-    minute: ""
-    hour: ""
-    weekday: ""
+    minute: "58"
+    hour: "3"
+    weekday: ""       # for systemd: 'Sat,Thu,Mon'
 
 ...

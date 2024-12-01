@@ -1,17 +1,27 @@
 ---
 
+calcardbackup_delegate_to: localhost
+
+calcardbackup_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/calcardbackup', true) }}/{{ calcardbackup_version }}"
+
+calcardbackup_cache_directory: /var/cache/ansible/calcardbackup
+
+calcardbackup_remote_tmp_directory: "{{ calcardbackup_cache_directory }}/{{ calcardbackup_version }}"
+
 calcardbackup_dependencies:
   - gnupg2
 
 calcardbackup_defaults_config:
-  nextcloud_path: ""
-  nextcloud_url: ""
+  nextcloud_path: "/usr/share/nginx/www/"
+  nextcloud_url: "https://www.my_nextcloud.net"
   trustful_certificate: true
   users_file: ""
-  backupfolder: "/srv/backup/"
+  backupfolder: "/backup/"
   date_extension: "-%Y-%m-%d"
-  keep_days_like_time_machine: "2"
-  delete_backups_older_than: "2"
+  keep_days_like_time_machine: "0"
+  delete_backups_older_than: "0"
   compress: true
   compression_method: "tar.gz"
   encrypt_backup: false
@@ -24,5 +34,16 @@ calcardbackup_defaults_config:
   read_mysql_optionfiles: true
   temporary_directory: ""
   mask: ""
+
+calcardbackup_defaults_cron:
+  type: cron          # alternative: systemd
+  daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true       # [true, false]
+  cron:
+    minute: "58"
+    hour: "2"
+    weekday: ""
+
+systemd_lib_directory: /lib/systemd/system
 
 ...

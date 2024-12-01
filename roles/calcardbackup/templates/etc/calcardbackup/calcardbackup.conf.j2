@@ -1,0 +1,42 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+nextcloud_path="{{ calcardbackup_config.nextcloud_path }}"
+
+nextcloud_url="{{ calcardbackup_config.nextcloud_url }}"
+
+trustful_certificate="{{ calcardbackup_config.trustful_certificate | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+users_file="{{ calcardbackup_config.users_file }}"
+
+backupfolder="{{ calcardbackup_config.backupfolder }}"
+
+date_extension="{{ calcardbackup_config.date_extension }}"
+
+keep_days_like_time_machine="{{ calcardbackup_config.keep_days_like_time_machine }}"
+
+delete_backups_older_than="{{ calcardbackup_config.delete_backups_older_than }}"
+
+compress="{{ calcardbackup_config.compress | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+compression_method="{{ calcardbackup_config.compression_method }}"
+
+encrypt_backup="{{ calcardbackup_config.encrypt_backup | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+gpg_passphrase="{{ calcardbackup_config.gpg_passphrase }}"
+
+backup_addressbooks="{{ calcardbackup_config.backup_addressbooks | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+backup_calendars="{{ calcardbackup_config.backup_calendars | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+include_shares="{{ calcardbackup_config.include_shares | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+snap="{{ calcardbackup_config.snap | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+one_file_per_component="{{ calcardbackup_config.one_file_per_component | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+read_mysql_optionfiles="{{ calcardbackup_config.read_mysql_optionfiles | bodsch.core.config_bool(true_as='yes', false_as='no') }}"
+
+temporary_directory="{{ calcardbackup_config.temporary_directory }}"
+
+mask="{{ calcardbackup_config.mask }}"
+
+########  end of config file for calcardbackup  ########
