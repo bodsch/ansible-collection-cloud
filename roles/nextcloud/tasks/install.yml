@@ -33,14 +33,14 @@
     nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_php_packages.redis }}"
   register: package_version
   when:
-    - nextcloud_defaults.redis | default([]) | nc_configured_cache('redis') | count > 0
+    - nextcloud_defaults.redis | default([]) | bodsch.cloud.nc_configured_cache('redis') | count > 0
 
 - name: append php memcache packages while memcache host are defined
   ansible.builtin.set_fact:
     nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_php_packages.memcache }}"
   register: package_version
   when:
-    - nextcloud_defaults.memcache | default({}) | nc_configured_cache('memcache') | count > 0
+    - nextcloud_defaults.memcache | default({}) | bodsch.cloud.nc_configured_cache('memcache') | count > 0
 
 - name: install dependencies
   ansible.builtin.package:
