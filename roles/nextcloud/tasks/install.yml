@@ -162,7 +162,7 @@
         - restart php-fpm
 
     - name: check nextcloud for installation
-      nextcloud_occ:
+      bodsch.cloud.nextcloud_occ:
         command: "check"
         working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
         owner: "{{ nextcloud_owner }}"
