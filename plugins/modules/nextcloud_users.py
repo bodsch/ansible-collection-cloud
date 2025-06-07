@@ -480,7 +480,8 @@ class NextcloudUsers(object):
             Options:
                   --output[=OUTPUT]              Output format (plain, json or json_pretty, default is plain) [default: "plain"]
                   --ignore-missing-user          Use this option to ignore errors when the user does not exist
-                  --default-value=DEFAULT-VALUE  (Only applicable on get) If no default value is set and the config does not exist, the command will exit with 1
+                  --default-value=DEFAULT-VALUE  (Only applicable on get)
+                                                 If no default value is set and the config does not exist, the command will exit with 1
                   --update-only                  Only updates the value, if it is not set before, it is not being added
                   --delete                       Specify this option to delete the config
                   --error-if-not-exists          Checks whether the setting exists before deleting it

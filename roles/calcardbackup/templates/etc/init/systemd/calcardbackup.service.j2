@@ -2,10 +2,33 @@
 # {{ ansible_managed }}
 
 [Unit]
-Description         = backup of nextcloud databases
+Description             = Exports calendars and addressbooks from ownCloud/Nextcloud
+Documentation           = https://codeberg.org/BernieO/calcardbackup
+
+ConditionPathExists     = {{ calcardbackup_config.nextcloud_path }}
+ConditionPathExists     = {{ calcardbackup_config.backupfolder }}
 
 [Service]
-ExecStart           = /usr/bin/calcardbackup -c /etc/calcardbackup/calcardbackup.conf
-Type                = oneshot
-ProtectSystem       = full
-ProtectHome         = true
+Type                    = oneshot
+ExecStart               = /usr/bin/calcardbackup -c /etc/calcardbackup/calcardbackup.conf
+
+WorkingDirectory        = /tmp
+User                    = root
+KillMode                = process
+
+PrivateTmp              = yes
+ProtectSystem           = full
+ProtectHome             = true
+
+SyslogIdentifier        = calcardbackup
+
+StartLimitInterval      = 5
+StartLimitBurst         = 10
+
+Restart                 = on-failure
+RestartSec              = 320s
+RestartSteps            = 5
+RestartMaxDelaySec      = 320s
+
+[Install]
+WantedBy                = multi-user.target

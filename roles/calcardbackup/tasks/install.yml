@@ -1,0 +1,56 @@
+---
+
+- name: create install directory
+  ansible.builtin.file:
+    path: "{{ calcardbackup_install_path }}"
+    state: directory
+    # owner: "{{ calcardbackup_system_user }}"
+    # group: "{{ calcardbackup_system_group }}"
+    mode: 0755
+
+- name: detect extracted binary file for calcardbackup on '{{ calcardbackup_delegate_to }}'
+  become: false
+  delegate_to: "{{ calcardbackup_delegate_to }}"
+  run_once: "{{ 'false' if calcardbackup_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ calcardbackup_local_tmp_directory }}/calcardbackup"
+  register: stat_file_binary
+
+- name: fail when extracted binary are missing
+  ansible.builtin.fail:
+    msg: "missing extracted binary on ansible controller"
+  when:
+    - not running_in_check_mode
+    - not stat_file_binary.stat.exists
+
+- name: detect installed calcardbackup binary
+  ansible.builtin.stat:
+    path: "{{ calcardbackup_install_path }}/calcardbackup"
+  register: stat_calcardbackup_binary
+
+- name: detect activated calcardbackup binary
+  ansible.builtin.stat:
+    path: /usr/bin/calcardbackup
+  register: stat_calcardbackup_activated
+
+- name: install and activate calcardbackup
+  when:
+    - not running_in_check_mode
+    - stat_file_binary.stat.exists
+    - (stat_calcardbackup_binary.stat is defined and not stat_calcardbackup_binary.stat.exists | default('false')) or
+      not stat_calcardbackup_activated.stat | bodsch.core.linked_version(calcardbackup_install_path, calcardbackup_version)
+  block:
+    - name: propagate calcardbackup binary
+      ansible.builtin.copy:
+        src: "{{ calcardbackup_local_tmp_directory }}/calcardbackup"
+        dest: "{{ calcardbackup_install_path }}/calcardbackup"
+        mode: 0755
+        remote_src: "{{ 'true' if calcardbackup_direct_download else 'false' }}"
+
+    - name: create link to binary
+      ansible.builtin.file:
+        src: "{{ calcardbackup_install_path }}/calcardbackup"
+        dest: "/usr/bin/calcardbackup"
+        state: link
+        force: true
+        follow: false

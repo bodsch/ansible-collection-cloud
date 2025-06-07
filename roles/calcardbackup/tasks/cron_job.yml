@@ -15,10 +15,10 @@
       block:
         - name: remove cron job for background jobs
           ansible.builtin.cron:
-            name: automatic mysql backup
+            name: Exports calendars and addressbooks from ownCloud/Nextcloud
             job: /usr/bin/calcardbackup
             user: root
-            cron_file: mysql_backup
+            cron_file: calcardbackup
             state: absent
           failed_when: false
 
@@ -40,10 +40,10 @@
       block:
         - name: remove cron job for background jobs
           ansible.builtin.cron:
-            name: automatic mysql backup
+            name: Exports calendars and addressbooks from ownCloud/Nextcloud
             job: /usr/bin/calcardbackup
             user: root
-            cron_file: mysql_backup
+            cron_file: calcardbackup
             state: absent
           failed_when: false
 
@@ -71,13 +71,13 @@
 
         - name: create cron job for background jobs
           ansible.builtin.cron:
-            name: automatic mysql backup
+            name: Exports calendars and addressbooks from ownCloud/Nextcloud
             job: /usr/bin/calcardbackup
             minute: "{{ calcardbackup_cron.minute | default('58') }}"
             hour: "{{ calcardbackup_cron.hour | default('2') }}"
             weekday: "{{ calcardbackup_cron.weekday | default('*') }}"
             user: root
-            cron_file: mysql_backup
+            cron_file: calcardbackup
             state: present
 
     - name: systemd unit

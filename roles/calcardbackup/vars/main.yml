@@ -1,5 +1,7 @@
 ---
 
+calcardbackup_install_path: /usr/local/opt/calcardbackup/{{ calcardbackup_version }}
+
 calcardbackup_delegate_to: localhost
 
 calcardbackup_local_tmp_directory: "{{
