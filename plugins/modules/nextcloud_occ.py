@@ -291,7 +291,7 @@ class NextcloudClient(object):
         if rc == 0:
             out = json.loads(out)
             installed = out.get("installed", False)
-            version_full = out.get("version", None)
+            # version_full = out.get("version", None)
             version_string = out.get("versionstring", None)
             db_upgrade = out.get("needsDbUpgrade", False)
         else:
