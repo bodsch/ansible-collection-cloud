@@ -1,0 +1,89 @@
+---
+
+- name: download
+  when:
+    - not running_in_check_mode
+    - calcardbackup_arch.install_type == "archive"
+  block:
+    - name: create download directory
+      become: false
+      delegate_to: "{{ calcardbackup_delegate_to }}"
+      run_once: "{{ 'false' if calcardbackup_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ calcardbackup_local_tmp_directory }}"
+        state: directory
+        mode: "0750"
+
+    - name: detect the downloaded calcardbackup archive
+      become: false
+      delegate_to: "{{ calcardbackup_delegate_to }}"
+      run_once: "{{ 'false' if calcardbackup_direct_download else 'true' }}"
+      ansible.builtin.stat:
+        path: "{{ calcardbackup_local_tmp_directory }}/{{ calcardbackup_arch.archive | basename }}"
+      register: stat_calcardbackup_archive
+
+    - name: download calcardbackup binary archive
+      when:
+        - stat_calcardbackup_archive.stat is defined
+        - not stat_calcardbackup_archive.stat.exists | default('false')
+      become: false
+      delegate_to: "{{ calcardbackup_delegate_to }}"
+      run_once: "{{ 'false' if calcardbackup_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ calcardbackup_arch.archive }}"
+        dest: "{{ calcardbackup_local_tmp_directory }}/{{ calcardbackup_arch.archive | basename }}"
+        mode: "0640"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+- name: detect extracted binary
+  become: false
+  delegate_to: "{{ calcardbackup_delegate_to }}"
+  run_once: "{{ 'false' if calcardbackup_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ calcardbackup_local_tmp_directory }}/calcardbackup"
+  register: stat_calcardbackup_binary
+
+- name: extract archive
+  become: false
+  delegate_to: "{{ calcardbackup_delegate_to }}"
+  run_once: "{{ 'false' if calcardbackup_direct_download else 'true' }}"
+  ansible.builtin.unarchive:
+    src: "{{ calcardbackup_local_tmp_directory }}/{{ calcardbackup_arch.archive | basename }}"
+    dest: "{{ calcardbackup_local_tmp_directory }}/"
+    copy: false
+    extra_opts:
+      - --strip-components=1
+  when:
+    - not running_in_check_mode
+    - stat_calcardbackup_binary.stat is defined
+    - not stat_calcardbackup_binary.stat.exists | default('false')
+
+...
+
+
+# - name: detect extracted binary
+#   become: false
+#   delegate_to: "{{ alertmanager_delegate_to }}"
+#   run_once: "{{ 'false' if alertmanager_direct_download else 'true' }}"
+#   ansible.builtin.stat:
+#     path: "{{ alertmanager_local_tmp_directory }}/{{ alertmanager_release.binary }}"
+#   register: stat_alertmanager_binary
+#
+# - name: extract alertmanager archive
+#   become: false
+#   delegate_to: "{{ alertmanager_delegate_to }}"
+#   run_once: "{{ 'false' if alertmanager_direct_download else 'true' }}"
+#   ansible.builtin.unarchive:
+#     src: "{{ alertmanager_local_tmp_directory }}/{{ alertmanager_release.file }}"
+#     dest: "{{ alertmanager_local_tmp_directory }}/"
+#     copy: false
+#     extra_opts:
+#       - --strip-components=1
+#   when:
+#     - not running_in_check_mode
+#     - stat_alertmanager_binary.stat is defined
+#     - not stat_alertmanager_binary.stat.exists | default('false')

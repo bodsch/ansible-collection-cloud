@@ -21,13 +21,12 @@ calcardbackup_config:
   read_mysql_optionfiles: true
   temporary_directory: ""
 
-calcardbackup_defaults_cron:
-  type: systemd
-  daemon: ""
-  enabled: false
+calcardbackup_cron:
+  type: cron
+  daemon: "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true
   cron:
     minute: "58"
     hour: "2"
-    weekday: "mon"
 
 ...
