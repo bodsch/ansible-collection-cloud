@@ -258,7 +258,7 @@
     owner: "{{ nextcloud_owner }}"
     group: "{{ nextcloud_group }}"
     path: "{{ nextcloud_install_base_directory }}/nextcloud/config"
-    recurse: true
+    # recurse: true
 
 - name: create link for nextcloud-version {{ nextcloud_version }} to {{ nextcloud_install_base_directory }}/nextcloud/server
   ansible.builtin.file:
