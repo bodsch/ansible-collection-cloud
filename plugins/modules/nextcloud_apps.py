@@ -81,8 +81,8 @@ class NextcloudApps(object):
                 app_state = app.get("state", "present")
                 app_name = app.get("name", None)
                 app_settings = app.get("settings", {})
-                config_failed = False
-                config_changed = False
+                # config_failed = False
+                # config_changed = False
                 config_msg = ""
                 groups = []
 
@@ -390,14 +390,16 @@ class NextcloudApps(object):
 
     def occ_app_settings(self, app_name, app_settings):
         """
-            sudo --preserve-env --user www-data php occ config:app:get richdocuments disable_certificate_verification
-            sudo --preserve-env --user www-data php occ config:app:set --output json --value yes --update-only richdocuments disable_certificate_verification
+            sudo --preserve-env --user www-data php occ
+                config:app:get richdocuments disable_certificate_verification
+            sudo --preserve-env --user www-data php occ
+                config:app:set --output json --value yes --update-only richdocuments disable_certificate_verification
         """
         # self.module.log(msg=f"occ_app_settings({app_name}, {app_settings})")
 
         failed = False
         changed = False
-        msg = "not to do."
+        # msg = "not to do."
         result_state = []
 
         for config_key, config_value in app_settings.items():

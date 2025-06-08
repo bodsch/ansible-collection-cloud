@@ -8,9 +8,9 @@
 from __future__ import absolute_import, print_function
 import os
 import re
-import json
-import pwd
-import grp
+# import json
+# import pwd
+# import grp
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
@@ -165,7 +165,7 @@ class NextcloudApps(object):
         """
         self.module.log(msg=f"occ_check_for_updates({check_installed})")
 
-        app_names = []
+        # app_names = []
         res = dict()
         update = False
         args = []
@@ -229,9 +229,9 @@ class NextcloudApps(object):
         """
         """
         self.module.log(msg=f"occ_update_app({app_name})")
-        _failed = True
-        _changed = False
-        _msg = ""
+        # _failed = True
+        # _changed = False
+        # _msg = ""
 
         args = []
         args += self.occ_base_args
