@@ -48,7 +48,7 @@ else
     echo "- ${role} - ${COLLECTION_SCENARIO}"
     echo ""
 
-    cp requirements.txt test-requirements.txt tox.ini "roles/${COLLECTION_ROLE}/"
+    cp test-requirements.txt tox.ini "roles/${COLLECTION_ROLE}/"
 
     pushd roles/${role} > /dev/null
 
