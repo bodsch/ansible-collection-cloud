@@ -41,19 +41,18 @@ class NextcloudApps(NextcloudApps):
 
         super().__init__(module, self.owner, self.working_dir)  # Ruft den Konstruktor der Basisklasse Occ auf
 
-        self.occ_base_args = [
-            "sudo",
-            "--preserve-env",
-            "--user",
-            self.owner,
-            "php",
-            "occ"
-        ]
+        # self.occ_base_args = [
+        #     "sudo",
+        #     "--preserve-env",
+        #     "--user",
+        #     self.owner,
+        #     "php",
+        #     "occ"
+        # ]
 
     def run(self):
         """
         """
-
         error, msg = self.self_check()
 
         if error:

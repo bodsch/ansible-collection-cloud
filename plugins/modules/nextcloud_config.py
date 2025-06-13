@@ -53,19 +53,7 @@ class NextcloudClient(NextcloudConfig):
         self.database = module.params.get("database")
         self.diff_output = module.params.get("diff_output")
 
-        # self.occ_base_args = [
-        #     "sudo",
-        #     "--user",
-        #     self.owner,
-        #     "php",
-        #     "occ"
-        # ]
-        #
-        # self.nc_config_file = f"{self.working_dir}/config/config.php"
-        # self.ansible_json_file = f"{self.working_dir}/config/ansible.json"
-
         self.cache_directory = "/var/cache/ansible/nextcloud"
-        # self.checksum_file_name = os.path.join(self.cache_directory, "daemon.checksum")
 
         super().__init__(module, owner=self.owner,
                          working_dir=self.working_dir,

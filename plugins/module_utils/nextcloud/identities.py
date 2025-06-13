@@ -28,7 +28,7 @@ class NextcloudIdentity(Occ):
 
         self.module = module
 
-        self.module.log(f"NextcloudIdentity::__init__({owner}, {working_dir})")
+        # self.module.log(msg=f"NextcloudIdentity::__init__({owner}, {working_dir})")
 
         self.owner = owner
         self.working_dir = working_dir
@@ -36,7 +36,7 @@ class NextcloudIdentity(Occ):
     def identities(self):
         """
         """
-        self.module.log("NextcloudIdentity::identities()")
+        # self.module.log("NextcloudIdentity::identities()")
 
         self.existing_users = self.list_users()
         self.existing_groups = self.list_groups()
@@ -51,7 +51,7 @@ class NextcloudIdentity(Occ):
                 --display-name="foo"
                 "foo"
         """
-        self.module.log(f"NextcloudIdentity::create_user({user_data})")
+        # self.module.log(msg=f"NextcloudIdentity::create_user({user_data})")
 
         _failed = True
         _changed = False
@@ -102,7 +102,7 @@ class NextcloudIdentity(Occ):
                 --password-from-env
                 "foo"
         """
-        self.module.log(f"NextcloudIdentity::reset_password({user_data})")
+        # self.module.log(msg=f"NextcloudIdentity::reset_password({user_data})")
 
         _failed = True
         _changed = False
@@ -147,7 +147,7 @@ class NextcloudIdentity(Occ):
                 --no-ansi
                 "foo"
         """
-        self.module.log(f"NextcloudIdentity::remove_user({name})")
+        # self.module.log(msg=f"NextcloudIdentity::remove_user({name})")
 
         _failed = True
         _changed = False
@@ -160,7 +160,7 @@ class NextcloudIdentity(Occ):
         args.append("--no-ansi")
         args.append(name)
 
-        self.module.log(msg=f" args: '{args}'")
+        # self.module.log(msg=f" args: '{args}'")
 
         rc, out, err = self._exec(args, check_rc=False)
 
@@ -186,7 +186,7 @@ class NextcloudIdentity(Occ):
     def list_users(self) -> list:
         """
         """
-        self.module.log("NextcloudIdentity::list_users()")
+        # self.module.log("NextcloudIdentity::list_users()")
 
         args = []
         args += self.occ_base_args
@@ -232,7 +232,7 @@ class NextcloudIdentity(Occ):
                   --delete                       Specify this option to delete the config
                   --error-if-not-exists          Checks whether the setting exists before deleting it
         """
-        self.module.log(msg=f"NextcloudIdentity::user_settings({username}, {user_settings})")
+        # self.module.log(msg=f"NextcloudIdentity::user_settings({username}, {user_settings})")
 
         _failed = True
         _changed = False
@@ -262,7 +262,7 @@ class NextcloudIdentity(Occ):
                 --output json
                 bob
         """
-        self.module.log(msg=f"NextcloudIdentity::user_info({username})")
+        # self.module.log(msg=f"NextcloudIdentity::user_info({username})")
 
         args = []
         args += self.occ_base_args
@@ -290,7 +290,7 @@ class NextcloudIdentity(Occ):
     def add_user_to_group(self, username, groups):
         """
         """
-        self.module.log(msg=f"NextcloudIdentity::user_to_group({username}, {groups})")
+        # self.module.log(msg=f"NextcloudIdentity::user_to_group({username}, {groups})")
 
         _group_added = []
         for group in groups:
@@ -315,7 +315,7 @@ class NextcloudIdentity(Occ):
     def delete_user_from_group(self, username, groups):
         """
         """
-        self.module.log(msg=f"NextcloudIdentity::delete_user_from_group({username}, {groups})")
+        # self.module.log(msg=f"NextcloudIdentity::delete_user_from_group({username}, {groups})")
         _group_removed = []
 
         for group in groups:
@@ -340,7 +340,7 @@ class NextcloudIdentity(Occ):
     def add_user_settings(self, username, app, key, value):
         """
         """
-        self.module.log(msg=f"NextcloudIdentity::add_user_settings({username}, {app}, {key}, {value})")
+        # self.module.log(msg=f"NextcloudIdentity::add_user_settings({username}, {app}, {key}, {value})")
 
         args = []
         args += self.occ_base_args
@@ -369,7 +369,7 @@ class NextcloudIdentity(Occ):
     def list_groups(self) -> list:
         """
         """
-        self.module.log("NextcloudIdentity::list_groups()")
+        # self.module.log("NextcloudIdentity::list_groups()")
 
         args = []
         args += self.occ_base_args
@@ -396,7 +396,7 @@ class NextcloudIdentity(Occ):
                 --no-ansi
                 "foo"
         """
-        self.module.log(msg=f"NextcloudIdentity::user_groups({username}, {groups})")
+        # self.module.log(msg=f"NextcloudIdentity::user_groups({username}, {groups})")
         _failed = True
         _changed = False
         _msg = ""
@@ -469,7 +469,7 @@ class NextcloudIdentity(Occ):
                 --display-name="foo"
                 "foo"
         """
-        self.module.log(msg=f"NextcloudIdentity::create_group({name}, {display_name})")
+        # self.module.log(msg=f"NextcloudIdentity::create_group({name}, {display_name})")
         _failed = True
         _changed = False
 
@@ -487,7 +487,7 @@ class NextcloudIdentity(Occ):
 
         args.append(name)
 
-        self.module.log(msg=f" args: '{args}'")
+        # self.module.log(msg=f" args: '{args}'")
 
         rc, out, err = self._exec(args, check_rc=False)
 
@@ -537,7 +537,7 @@ class NextcloudIdentity(Occ):
                 --no-ansi
                 "foo"
         """
-        self.module.log(msg=f"NextcloudIdentity::remove_group({name})")
+        # self.module.log(msg=f"NextcloudIdentity::remove_group({name})")
         _failed = True
         _changed = False
 
@@ -548,7 +548,7 @@ class NextcloudIdentity(Occ):
         args.append("--no-ansi")
         args.append(name)
 
-        self.module.log(msg=f" args: '{args}'")
+        # self.module.log(msg=f" args: '{args}'")
 
         rc, out, err = self._exec(args, check_rc=False)
 

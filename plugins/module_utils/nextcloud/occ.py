@@ -21,7 +21,7 @@ class Occ():
         """
         self.module = module
 
-        self.module.log(f"Occ::__init__({owner}, {working_dir})")
+        # self.module.log(f"Occ::__init__({owner}, {working_dir})")
 
         self.owner = owner
         self.working_dir = working_dir
@@ -40,7 +40,7 @@ class Occ():
         """
         self.module.log("Occ::self_check()")
 
-        self.module.log(msg=f" console   : '{self._occ}'")
+        # self.module.log(msg=f" console   : '{self._occ}'")
 
         error = False
         msg = dict()
@@ -108,14 +108,14 @@ class Occ():
     def upgrade(self):
         """
         """
-        self.module.log("Occ::upgrade()")
+        # self.module.log("Occ::upgrade()")
         pass
 
     def check(self, check_installed: bool = False) -> (int, bool, str, str):
         """
             sudo -u www-data php occ check
         """
-        self.module.log(f"Occ::check({check_installed})")
+        # self.module.log(f"Occ::check({check_installed})")
         # self.module.log(msg="occ_check()")
 
         installed = False
@@ -136,9 +136,9 @@ class Occ():
             Cannot write into "config" directory!
             installed: ''
         """
-        self.module.log(msg=f" rc : '{rc}'")
-        self.module.log(msg=f" out: '{out.strip()}'")
-        self.module.log(msg=f" err: '{err.strip()}'")
+        # self.module.log(msg=f" rc : '{rc}'")
+        # self.module.log(msg=f" out: '{out.strip()}'")
+        # self.module.log(msg=f" err: '{err.strip()}'")
 
         if not check_installed:
             self.module.log(msg=f"= rc: {rc}, out: {out.strip()}, err: {err.strip()}")
@@ -205,23 +205,26 @@ class Occ():
                 --admin-user='admin'
                 --admin-pass='admin'
         """
-        self.module.log(f"Occ::maintenance_install({config})")
+        # self.module.log(f"Occ::maintenance_install({config})")
 
         _failed = True
         _changed = False
 
-        self.module.log(msg=f" database: '{config.get("database", {})}'")
-        self.module.log(msg=f" admin   : '{config.get("admin", {})}'")
+        database = config.get("database", {})
+        admin = config.get("admin", {})
+
+        # self.module.log(msg=f" database: '{database}'")
+        # self.module.log(msg=f" admin   : '{admin}'")
 
         data_dir = config.get("data_dir", None)
-        dba_type = config.get("database", {}).get("type", None)
-        dba_hostname = config.get("database", {}).get("hostname", None)
-        dba_port = config.get("database", {}).get("port", None)
-        dba_schema = config.get("database", {}).get("schema", None)
-        dba_username = config.get("database", {}).get("username", None)
-        dba_password = config.get("database", {}).get("password", None)
-        admin_username = config.get("admin", {}).get("username", None)
-        admin_password = config.get("admin", {}).get("password", None)
+        dba_type = database.get("type", None)
+        dba_hostname = database.get("hostname", None)
+        dba_port = database.get("port", None)
+        dba_schema = database.get("schema", None)
+        dba_username = database.get("username", None)
+        dba_password = database.get("password", None)
+        admin_username = admin.get("username", None)
+        admin_password = admin.get("password", None)
 
         args = []
         args += self.occ_base_args
@@ -276,7 +279,7 @@ class Occ():
             ]
             error = None
 
-            self.module.log("--------------------")
+            # self.module.log("--------------------")
 
             _output = []
             _output += out.splitlines()
@@ -291,7 +294,7 @@ class Occ():
                     self.module.log(msg=f"  - {error}")
 
                     break
-            self.module.log("--------------------")
+            # self.module.log("--------------------")
 
             _, installed, version, _, err = self.status()
 
@@ -317,7 +320,7 @@ class Occ():
     def background_job(self, crontype: str) -> dict:
         """
         """
-        self.module.log(f"Occ::background_job({crontype})")
+        # self.module.log(f"Occ::background_job({crontype})")
         args = []
         args += self.occ_base_args
 
@@ -335,7 +338,7 @@ class Occ():
         """
             sudo -u www-data php occ config:list system
         """
-        self.module.log(f"Occ::config_list({type})")
+        # self.module.log(f"Occ::config_list({type})")
 
         args = []
         args += self.occ_base_args
@@ -362,14 +365,14 @@ class Occ():
     def _exec(self, args: list, check_rc: bool = True):
         """
         """
-        self.module.log(msg=f"Occ::_exec({args}, {check_rc})")
+        # self.module.log(msg=f"Occ::_exec({args}, {check_rc})")
 
         rc, out, err = self.module.run_command(args, cwd=self.working_dir, check_rc=check_rc)
 
-        self.module.log(msg=f"  rc : '{rc}'")
-        self.module.log(msg=f"  out: '{out.strip()}'")
-        self.module.log(msg=f"  err: '{err.strip()}'")
-        for line in err.splitlines():
-            self.module.log(msg=f"   {line.strip()}")
+        # self.module.log(msg=f"  rc : '{rc}'")
+        # self.module.log(msg=f"  out: '{out.strip()}'")
+        # self.module.log(msg=f"  err: '{err.strip()}'")
+        # for line in err.splitlines():
+        #     self.module.log(msg=f"   {line.strip()}")
 
         return rc, out, err

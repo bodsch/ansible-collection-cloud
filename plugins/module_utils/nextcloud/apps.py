@@ -29,7 +29,7 @@ class NextcloudApps(Occ):
 
         self.module = module
 
-        self.module.log(f"NextcloudApps::__init__({owner}, {working_dir})")
+        # self.module.log(f"NextcloudApps::__init__({owner}, {working_dir})")
 
         self.owner = owner
         self.working_dir = working_dir
@@ -37,7 +37,7 @@ class NextcloudApps(Occ):
     def install_app(self, app_name):
         """
         """
-        self.module.log(msg=f"NextcloudApps::install_app({app_name})")
+        # self.module.log(f"NextcloudApps::install_app({app_name})")
 
         _failed = True
         _changed = False
@@ -71,7 +71,7 @@ class NextcloudApps(Occ):
     def remove_app(self, app_name):
         """
         """
-        # self.module.log(msg=f"NextcloudApps::remove_app({app_name})")
+        # # self.module.log(f"NextcloudApps::remove_app({app_name})")
         _failed = True
         _changed = False
         _msg = ""
@@ -105,7 +105,7 @@ class NextcloudApps(Occ):
     def path_app(self, app_name):
         """
         """
-        self.module.log(msg=f"NextcloudApps::path_app({app_name})")
+        # self.module.log(f"NextcloudApps::path_app({app_name})")
         _failed = True
         _changed = False
 
@@ -132,7 +132,7 @@ class NextcloudApps(Occ):
     def enable_app(self, app_name, groups=[]):
         """
         """
-        self.module.log(msg=f"NextcloudApps::enable_app({app_name}, {groups})")
+        # self.module.log(f"NextcloudApps::enable_app({app_name}, {groups})")
         _failed = True
         _changed = False
         _msg = ""
@@ -169,7 +169,7 @@ class NextcloudApps(Occ):
     def disable_app(self, app_name):
         """
         """
-        self.module.log(msg=f"NextcloudApps::disable_app({app_name})")
+        # self.module.log(f"NextcloudApps::disable_app({app_name})")
         _failed = True
         _changed = False
         _msg = ""
@@ -207,7 +207,7 @@ class NextcloudApps(Occ):
                 php occ config:app:set
                     --output json --value yes --update-only richdocuments disable_certificate_verification
         """
-        # self.module.log(msg=f"NextcloudApps::app_settings({app_name}, {app_settings})")
+        # # self.module.log(f"NextcloudApps::app_settings({app_name}, {app_settings})")
 
         failed = False
         changed = False
@@ -270,7 +270,7 @@ class NextcloudApps(Occ):
     def list_apps(self):
         """
         """
-        self.module.log(msg="NextcloudApps::list_apps()")
+        # self.module.log(f"NextcloudApps::list_apps()")
 
         app_names = []
         args = []
@@ -300,7 +300,7 @@ class NextcloudApps(Occ):
     def check_for_updates(self, check_installed=False):
         """
         """
-        self.module.log(msg=f"NextcloudApps::check_for_updates({check_installed})")
+        # self.module.log(f"NextcloudApps::check_for_updates({check_installed})")
 
         # app_names = []
         res = dict()
@@ -335,7 +335,7 @@ class NextcloudApps(Occ):
     def update_app(self, app_name):
         """
         """
-        self.module.log(msg=f"NextcloudApps::update_app({app_name})")
+        # self.module.log(f"NextcloudApps::update_app({app_name})")
 
         # _failed = True
         # _changed = False
@@ -348,7 +348,7 @@ class NextcloudApps(Occ):
         args.append("--no-ansi")
         args.append(app_name)
 
-        self.module.log(msg=f"args: {args}")
+        # self.module.log(msg=f"args: {args}")
 
         rc, out, err = self._exec(args, check_rc=False)
 

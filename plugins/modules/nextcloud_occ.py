@@ -48,14 +48,6 @@ class NextcloudClient(Occ):
 
         super().__init__(module, self.owner, self.working_dir)
 
-        # self.occ_base_args = [
-        #     "sudo",
-        #     "--user",
-        #     self.owner,
-        #     "php",
-        #     "occ"
-        # ]
-
     def run(self):
         """
         """

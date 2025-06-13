@@ -35,27 +35,15 @@ class NextcloudUsers(NextcloudIdentity):
         """
         self.module = module
 
-        self.module.log("NextcloudUsers::__init__()")
-
         self.users = module.params.get("users")
         self.working_dir = module.params.get("working_dir")
         self.owner = module.params.get("owner")
 
         super().__init__(module, self.owner, self.working_dir)
 
-        # self.occ_base_args = [
-        #     "sudo",
-        #     "--preserve-env",
-        #     "--user",
-        #     self.owner,
-        #     "php",
-        #     "occ"
-        # ]
-
     def run(self):
         """
         """
-
         error, msg = self.self_check()
 
         if error:

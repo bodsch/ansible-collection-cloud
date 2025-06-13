@@ -30,7 +30,7 @@ class NextcloudConfig(Occ):
 
         self.module = module
 
-        self.module.log(f"NextcloudConfig::__init__({owner}, {working_dir}, {cache_directory})")
+        # self.module.log(f"NextcloudConfig::__init__({owner}, {working_dir}, {cache_directory})")
 
         self.owner = owner
         self.working_dir = working_dir
@@ -46,7 +46,7 @@ class NextcloudConfig(Occ):
     def import_file(self, config_file):
         """
         """
-        self.module.log(f"NextcloudConfig::import_file({config_file})")
+        # self.module.log(f"NextcloudConfig::import_file({config_file})")
 
         args = []
         args += self.occ_base_args
@@ -70,7 +70,7 @@ class NextcloudConfig(Occ):
     def check_config(self, params):
         """
         """
-        self.module.log(f"NextcloudConfig::check_config({params})")
+        # self.module.log(f"NextcloudConfig::check_config({params})")
 
         self.owner = params.get("owner")
         self.group = params.get("group")

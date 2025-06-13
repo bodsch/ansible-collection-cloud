@@ -35,21 +35,11 @@ class NextcloudGroups(NextcloudIdentity):
         """
         self.module = module
 
-        self.module.log("NextcloudGroups::__init__()")
-
         self.groups = module.params.get("groups")
         self.working_dir = module.params.get("working_dir")
         self.owner = module.params.get("owner")
 
         super().__init__(module, self.owner, self.working_dir)
-
-        # self.occ_base_args = [
-        #     "sudo",
-        #     "--user",
-        #     self.owner,
-        #     "php",
-        #     "occ"
-        # ]
 
     def run(self):
         """
