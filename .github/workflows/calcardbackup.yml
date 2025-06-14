@@ -53,9 +53,9 @@ jobs:
       matrix:
         image:
           - debian:12
-        ansible:
+        ansible-version:
           - '9.5'
-        python:
+        python_version:
           - '3.12'
         scenario:
           - default
@@ -105,9 +105,9 @@ jobs:
       matrix:
         image:
           - debian:12
-        ansible:
+        ansible-version:
           - '9.5'
-        python:
+        python_version:
           - '3.12'
         scenario:
           - configured
