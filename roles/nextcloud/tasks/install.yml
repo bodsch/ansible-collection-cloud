@@ -251,14 +251,14 @@
         - __stat_nextcloud_config_json.stat.exists is defined
         - not __stat_nextcloud_config_json.stat.exists
 
-- name: enable config write
-  ansible.builtin.file:
-    # state: directory
-    mode: "0775"
-    owner: "{{ nextcloud_owner }}"
-    group: "{{ nextcloud_group }}"
-    path: "{{ nextcloud_install_base_directory }}/nextcloud/config"
-    # recurse: true
+    - name: enable config write after syncronize
+      ansible.builtin.file:
+        # state: directory
+        mode: "0775"
+        owner: "{{ nextcloud_owner }}"
+        group: "{{ nextcloud_group }}"
+        path: "{{ nextcloud_install_base_directory }}/nextcloud/config"
+        recurse: true
 
 - name: create link for nextcloud-version {{ nextcloud_version }} to {{ nextcloud_install_base_directory }}/nextcloud/server
   ansible.builtin.file:
