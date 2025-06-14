@@ -7,20 +7,10 @@
 
 from __future__ import absolute_import, print_function
 import os
-# import re
-# import pwd
-# import grp
-# import json
-# import shutil
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
-# from ansible_collections.bodsch.core.plugins.module_utils.checksum import Checksum
-# from ansible_collections.bodsch.core.plugins.module_utils.diff import SideBySide
-# from ansible_collections.bodsch.core.plugins.module_utils.validate import validate
-
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.config import NextcloudConfig
-# from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import Occ
 
 
 __metaclass__ = type

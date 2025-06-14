@@ -112,7 +112,7 @@ jobs:
           - "3.11"
         scenario:
           - configured
-          - configured-systemd
+          - configured-cron
         collection_role:
           - calcardbackup
 

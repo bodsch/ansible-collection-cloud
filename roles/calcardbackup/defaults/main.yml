@@ -1,6 +1,6 @@
 ---
 
-calcardbackup_version: "8.0.2"
+calcardbackup_version: "8.2.0"
 
 calcardbackup_user:
   group: calcardbackup
@@ -21,7 +21,7 @@ calcardbackup_direct_download: false
 calcardbackup_config: {}
 
 calcardbackup_cron:
-  type: cron          # alternative and currently not supported: cron or systemd
+  type: systemd       # alternative supported: cron or systemd
   daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
   enabled: true       # [true, false]
   cron:

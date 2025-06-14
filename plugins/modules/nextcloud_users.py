@@ -6,11 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-# import os
-# import re
-# import json
-# import pwd
-# import grp
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.identities import NextcloudIdentity

@@ -6,15 +6,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-# import os
-# import re
-# import json
-# import pwd
-# import grp
-# import shutil
 
 from ansible.module_utils.basic import AnsibleModule
-
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import Occ
 
 __metaclass__ = type
