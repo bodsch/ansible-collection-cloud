@@ -46,9 +46,8 @@ jobs:
         image:
           - archlinux:latest
         ansible:
-          - '8.5'
+          - '9.5'
         python:
-          - '3.11'
           - '3.12'
         scenario:
           - default
@@ -90,4 +89,5 @@ jobs:
             test \
               -e TOX_ANSIBLE="ansible_${{ matrix.ansible }}" \
               -e DISTRIBUTION="${{ matrix.image }}" \
+              -e COLLECTION_ROLE="${{ matrix.collection_role }}" \
               -e COLLECTION_SCENARIO="${{ matrix.scenario }}"
