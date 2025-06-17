@@ -104,14 +104,13 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - debian:12
+          - archlinux:latest
         ansible-version:
           - '9.5'
         python_version:
           - '3.12'
         scenario:
           - configured
-          # - configured-daily
           - aur-package
           - pacman-repository
         collection_role:
