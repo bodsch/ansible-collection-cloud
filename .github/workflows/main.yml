@@ -87,7 +87,7 @@ jobs:
         run: |
           make \
             test \
-              -e TOX_ANSIBLE="ansible_${{ matrix.ansible }}" \
+              -e TOX_ANSIBLE="ansible_${{ matrix.ansible-version }}" \
               -e DISTRIBUTION="${{ matrix.image }}" \
               -e COLLECTION_ROLE="${{ matrix.collection_role }}" \
               -e COLLECTION_SCENARIO="${{ matrix.scenario }}"
