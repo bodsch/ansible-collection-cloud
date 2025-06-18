@@ -1,20 +1,17 @@
 ---
 
-#- name: check installed
-#  ansible.builtin.include_tasks: check_installed.yml
-
-- name: d
-  debug:
-    msg: "{{ collabora_arch }}"
-
 - name: based on arch linux
   when:
     - ansible_os_family | lower == 'archlinux'
     - collabora_arch.install_type in ["source", "archive", "repository"]
   ansible.builtin.include_tasks: "install/archlinux/{{ collabora_arch.install_type }}.yml"
 
+- name: check installed
+  ansible.builtin.include_tasks: check_installed.yml
+
 - name: not based on arch linux
   when:
+    - not coolwsd_installed
     - ansible_os_family | lower != 'archlinux'
   block:
     - name: create policy-rc.d

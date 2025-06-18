@@ -38,7 +38,7 @@
   become_user: aur_builder
   bodsch.core.aur:
     state: present
-    name: collabora
+    name: collabora-online-server
     repository: "{{ collabora_arch.source_repository }}"
   async: 3200
   poll: 10

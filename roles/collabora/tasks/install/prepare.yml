@@ -18,6 +18,7 @@
       ansible.builtin.apt_key:
         id: 0C54D189F4BA284D
         keyserver: keyserver.ubuntu.com
+      register: collabora_apt_key
 
     - name: add collabora online repo sources
       ansible.builtin.apt_repository:
@@ -25,10 +26,14 @@
         repo: "deb https://www.collaboraoffice.com/repos/CollaboraOnline/CODE-deb ./"
         state: present
         update_cache: true
+      register: collabora_apt_repository
 
-- name: update package cache
-  ansible.builtin.package:
-    update_cache: true
+    - name: update package cache
+      ansible.builtin.package:
+        update_cache: true
+      when:
+        - collabora_apt_key.changed
+        - collabora_apt_repository.changed
 
 - name: install requirements
   ansible.builtin.package:

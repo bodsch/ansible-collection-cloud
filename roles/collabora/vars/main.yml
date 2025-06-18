@@ -49,15 +49,17 @@ collabora_defaults_config:
 
   cache_path: /var/cache/loolwsd
   # You can manage the mounting feature. Either "false" or "true". (As a string.)
-  mount_jail_tree: "true"
+  mount_jail_tree: true
+  # Use mount namespaces instead of coolmount.
+  mount_namespaces: true
 
   # Remote API settings for spell and grammar checking
   languagetool:
     enable: false
     base_url: ""
     user_name: ""
-    api_key:
-    ssl_verification:
+    api_key: ""
+    ssl_verification: true
     rest_protocol: ""
 
   # DeepL API settings for translation service
@@ -68,6 +70,8 @@ collabora_defaults_config:
 
   # External hostname:port of the server running coolwsd
   server_name: ""
+  # Enable to protect encoded URLs from getting decoded by intermediate hops
+  hexify_embedded_urls: false
   # Enable/Disable experimental features
   experimental_features: true
   # The maximum percentage of available memory consumed by all of the Collabora Online processes
@@ -76,6 +80,7 @@ collabora_defaults_config:
   num_prespawn_children: "1"
   # Every number of hours will fetch latest version data
   fetch_update_check: "10"                      # hours
+  allow_update_popup: true                      # true
 
   logging:
     color: true
@@ -99,7 +104,7 @@ collabora_defaults_config:
 
     anonymize:
       user_data: true
-      salt: ""                                    # A secret 64-bit random number (default: 82589933)
+      salt: "12109142107628822448"                                    # A secret 64-bit random number (default: 82589933)
     docstats: false
     userstats: false
   #
@@ -130,6 +135,7 @@ collabora_defaults_config:
         #   network: 'localhost'
     content_security_policy: ""
     connection_timeout_secs: 30
+    proxy_prefix: false
   #
   ssl:
     # Controls whether SSL encryption between coolwsd and the network is enabled (do not disable for production deployment).
@@ -177,7 +183,7 @@ collabora_defaults_config:
     enable_metrics_unauthenticated: ""
   #
   watermark:
-    opacity: ""
+    opacity: "0.2"
     text: ""
   #
   user_interface:
