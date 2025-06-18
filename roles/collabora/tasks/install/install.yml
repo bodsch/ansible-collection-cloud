@@ -11,7 +11,7 @@
 
 - name: not based on arch linux
   when:
-    - not coolwsd_installed
+    - not collabora_installed
     - ansible_os_family | lower != 'archlinux'
   block:
     - name: create policy-rc.d

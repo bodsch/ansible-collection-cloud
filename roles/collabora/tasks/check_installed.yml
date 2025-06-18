@@ -3,24 +3,24 @@
 - name: detect if coolwsd exists
   ansible.builtin.stat:
     path: /usr/bin/coolwsd
-  register: coolwsd_binary_file
+  register: collabora_binary_file
 
 - name: detect installed collabora version
   bodsch.cloud.collabora_version:
-  register: installed_coolwsd_version
+  register: installed_collabora_version
   when:
-    - coolwsd_binary_file.stat.exists
+    - collabora_binary_file.stat.exists
 
 - name: define collabora version
   ansible.builtin.set_fact:
-    coolwsd_installed: true
-    coolwsd_installed_version: "{{ installed_coolwsd_version.version }}"
+    collabora_installed: true
+    collabora_installed_version: "{{ installed_collabora_version.version }}"
   when:
-    - installed_coolwsd_version is defined
-    - installed_coolwsd_version.rc is defined
-    - installed_coolwsd_version.rc | int == 0
+    - installed_collabora_version is defined
+    - installed_collabora_version.rc is defined
+    - installed_collabora_version.rc | int == 0
 
 - name: installed collabora version
   ansible.builtin.debug:
     verbosity: 4
-    var: coolwsd_installed_version | default('not installed')
+    var: collabora_installed_version | default('not installed')
