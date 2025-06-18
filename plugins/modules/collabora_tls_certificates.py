@@ -123,7 +123,7 @@ class CollaboraTLSCertificates(object):
 
         # Create the directory
         try:
-            os.makedirs(self.destination, exist_ok = True)
+            os.makedirs(self.destination, exist_ok=True)
             msg = f"Directory '{self.destination}' created successfully."
 
             shutil.chown(self.destination, self.owner, self.group)
@@ -204,7 +204,7 @@ class CollaboraTLSCertificates(object):
 
 def main():
     module = AnsibleModule(
-        argument_spec = dict(
+        argument_spec=dict(
             source=dict(
                 required=True,
                 type='dict',
@@ -224,7 +224,7 @@ def main():
                 default="mysql"
             ),
         ),
-        supports_check_mode = False,
+        supports_check_mode=False,
     )
 
     helper = CollaboraTLSCertificates(module)

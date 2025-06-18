@@ -102,8 +102,8 @@ def main():
 
     )
     module = AnsibleModule(
-        argument_spec = specs,
-        supports_check_mode = False,
+        argument_spec=specs,
+        supports_check_mode=False,
     )
 
     helper = CollaboraVersion(module)
