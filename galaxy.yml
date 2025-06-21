@@ -24,8 +24,8 @@ tags:
   - office
 
 dependencies:
-  bodsch.core: ">=2.0.0"
-  bodsch.scm: ">=1.4.4"
+  bodsch.core: ">=2.6.5"
+  bodsch.scm: ">=1.4.5"
 
 repository: https://github.com/bodsch/ansible-collection-cloud
 documentation: https://github.com/bodsch/ansible-collection-cloud/README.md

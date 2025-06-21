@@ -1,47 +1,46 @@
 ---
 
-- name: install build tools
-  ansible.builtin.package:
-    name:
-      - base-devel
-      #- bison
-      # - cmake
-      - diffutils
-      - fakeroot
-      #- flex
-      - make
-      # - patch
-    state: present
+- name: build
+  when:
+    - not collabora_installed
+  block:
 
-- name: create sudo rules for aur_builder
-  ansible.builtin.copy:
-    content: '%aur_builder ALL=(ALL) NOPASSWD: ALL'
-    dest: /etc/sudoers.d/aur
-    mode: 0640
-    validate: visudo -cf %s
+    - name: install build dependencies
+      ansible.builtin.package:
+        name: "{{ collabora_build_dependencies }}"
+        state: present
+      when:
+        - collabora_build_dependencies | default([]) | count > 0
 
-- name: create build group
-  ansible.builtin.group:
-    name: aur_builder
+    - name: create sudo rules for aur_builder
+      ansible.builtin.copy:
+        content: '%aur_builder ALL=(ALL) NOPASSWD: ALL'
+        dest: /etc/sudoers.d/aur
+        mode: 0640
+        validate: visudo -cf %s
 
-- name: create build user
-  ansible.builtin.user:
-    name: aur_builder
-    group: aur_builder
+    - name: create build group
+      ansible.builtin.group:
+        name: aur_builder
 
-- name: update package cache
-  ansible.builtin.package:
-    update_cache: true
+    - name: create build user
+      ansible.builtin.user:
+        name: aur_builder
+        group: aur_builder
 
-- name: install collabora package via aur
-  become: true
-  become_user: aur_builder
-  bodsch.core.aur:
-    state: present
-    name: collabora
-    repository: "{{ collabora_arch.source_repository }}"
-  async: 3200
-  poll: 10
-  register: _collabora_installed
+    - name: update package cache
+      ansible.builtin.package:
+        update_cache: true
+
+    - name: install collabora package via aur
+      become: true
+      become_user: aur_builder
+      bodsch.core.aur:
+        state: present
+        name: collabora-online-server
+        repository: "{{ collabora_arch.source_repository }}"
+      async: 3200
+      poll: 10
+      register: _collabora_installed
 
 ...

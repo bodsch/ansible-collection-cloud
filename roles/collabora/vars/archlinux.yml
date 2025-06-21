@@ -5,10 +5,18 @@ collabora_dependencies:
   - tar
   - bzip2
 
+collabora_build_dependencies:
+  - base-devel
+  #- bison
+  # - cmake
+  - diffutils
+  - fakeroot
+  #- flex
+  - make
+  # - patch
+
 collabora_packages:
   - coolwsd
   - code-brand
-
-# collabora_dependencies: []
 
 ...
