@@ -15,6 +15,8 @@ collabora_remote_tmp_directory: "{{ collabora_cache_directory }}/{{ collabora_ve
 collabora_installed: false
 collabora_installed_version: ""
 
+collabora_build_dependencies: []
+
 collabora_os_dependencies: []
 
 collabora_dependencies:
@@ -22,12 +24,15 @@ collabora_dependencies:
   - tar
   - bzip2
   - gpg
+  - apt-transport-https
 
 collabora_python_packages:
   # - name: mysqlclient
   - name: dirsync
 
-collabora_packages: []
+collabora_packages:
+  - coolwsd
+  - code-brand
 
 collabora_defaults_service:
   pidfile: ""

@@ -18,18 +18,19 @@
         - default.yaml
       skip: true
 
-# - name: Prepare debian
-#   when:
-#     - ansible_pkg_mgr == "apt"
-#   block:
-#     - name: Add collabora key (apt)
-#       ansible.builtin.apt_key:
-#         keyserver: keyserver.ubuntu.com
-#         id: "{{ collabora_key }}"
-#
-#     - name: Add repository (apt)
-#       ansible.builtin.apt_repository:
-#         filename: collabora
-#         repo: "deb {{ collabora_repo }} ./"
+- name: detect ansible check_mode
+  bodsch.core.check_mode:
+  register: _check_mode
+
+- name: define running_in_check_mode
+  ansible.builtin.set_fact:
+    running_in_check_mode: '{{ _check_mode.check_mode }}'
+
+- name: install dependencies
+  ansible.builtin.package:
+    name: "{{ collabora_dependencies }}"
+    state: present
+  when:
+    - collabora_dependencies | default([]) | count > 0
 
 ...

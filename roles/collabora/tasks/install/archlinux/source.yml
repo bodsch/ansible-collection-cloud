@@ -4,18 +4,13 @@
   when:
     - not collabora_installed
   block:
-    - name: install build tools
+
+    - name: install build dependencies
       ansible.builtin.package:
-        name:
-          - base-devel
-          #- bison
-          # - cmake
-          - diffutils
-          - fakeroot
-          #- flex
-          - make
-          # - patch
+        name: "{{ collabora_build_dependencies }}"
         state: present
+      when:
+        - collabora_build_dependencies | default([]) | count > 0
 
     - name: create sudo rules for aur_builder
       ansible.builtin.copy:

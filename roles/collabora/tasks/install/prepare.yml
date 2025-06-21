@@ -8,39 +8,30 @@
   when:
     - ansible_os_family | lower == 'debian'
   block:
-    - name: install tools
-      ansible.builtin.package:
-        state: present
-        name:
-          - gpg
-
     - name: add collabora apt key
-      ansible.builtin.apt_key:
-        id: 0C54D189F4BA284D
-        keyserver: keyserver.ubuntu.com
+      ansible.builtin.get_url:
+        url: https://collaboraoffice.com/downloads/gpg/collaboraonline-release-keyring.gpg
+        dest: /usr/share/keyrings/collabora.gpg
+        mode: '0644'
       register: collabora_apt_key
 
-    - name: add collabora online repo sources
-      ansible.builtin.apt_repository:
-        filename: collaboraonline.list
-        repo: "deb https://www.collaboraoffice.com/repos/CollaboraOnline/CODE-deb ./"
-        state: present
-        update_cache: true
+    - name: Add Collabora CODE APT repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/collaboraonline.sources
+        content: |
+          Types: deb
+          URIs: https://www.collaboraoffice.com/repos/CollaboraOnline/CODE-deb
+          Suites: ./
+          Signed-By: /usr/share/keyrings/collabora.gpg
+        mode: '0644'
       register: collabora_apt_repository
 
     - name: update package cache
       ansible.builtin.package:
         update_cache: true
       when:
-        - collabora_apt_key.changed
-        - collabora_apt_repository.changed
-
-- name: install requirements
-  ansible.builtin.package:
-    name: "{{ collabora_dependencies | union(collabora_os_dependencies) }}"
-    state: present
-  when:
-    - collabora_dependencies | count > 0 or collabora_os_dependencies | count > 0
+        - collabora_apt_key.changed or
+          collabora_apt_repository.changed
 
 - name: get latest system information
   ansible.builtin.setup:
