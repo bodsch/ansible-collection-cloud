@@ -25,7 +25,7 @@ tags:
 
 dependencies:
   bodsch.core: ">=2.6.5"
-  bodsch.scm: ">=1.4.5"
+  bodsch.scm: ">=1.4.6"
 
 repository: https://github.com/bodsch/ansible-collection-cloud
 documentation: https://github.com/bodsch/ansible-collection-cloud/README.md

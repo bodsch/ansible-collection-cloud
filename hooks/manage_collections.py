@@ -79,9 +79,6 @@ class AnsibleCollectionManager():
 
         installed = self.get_installed_collections()
 
-        # print(required)
-        # print(type(required))
-
         for item in required:
             name = item.get("name")
             required_version = item.get("version")
