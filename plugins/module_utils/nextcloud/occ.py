@@ -84,9 +84,18 @@ class Occ():
 
         rc, out, err = self._exec(args, check_rc=False)
 
-        # self.module.log(msg=f" rc : '{rc}'")
-        # self.module.log(msg=f" out: '{out.strip()}'")
-        # self.module.log(msg=f" err: '{err.strip()}'")
+        self.module.log(msg=f" rc : '{rc}'")
+        self.module.log(msg=f" out: '{out.strip()}'")
+        self.module.log(msg=f" err: '{err.strip()}'")
+
+        # TODO
+        # Fix error like this:
+        # out: 'Warning: Failed loading Zend extension 'opcache'
+        #      (tried: /usr/lib/php/modules/opcache (/usr/lib/php/modules/opcache:
+        #       cannot open shared object file: No such file or directory),
+        #       /usr/lib/php/modules/opcache.so (/usr/lib/php/modules/opcache.so:
+        #       cannot open shared object file: No such file or directory)) in Unknown on line 0
+        # This version of Nextcloud is not compatible with PHP>=8.5.<br/>You are currently running 8.5.1.'
 
         if rc == 0:
             out = json.loads(out)
@@ -95,6 +104,7 @@ class Occ():
             version_string = out.get("versionstring", None)
             db_upgrade = out.get("needsDbUpgrade", False)
         else:
+
             err = out.strip()
 
             pattern = re.compile(r"An unhandled exception has been thrown:\n(?P<exception>.*)\n.*", re.MULTILINE)
@@ -107,15 +117,50 @@ class Occ():
 
     def upgrade(self):
         """
+            db:add-missing-columns                 Add missing optional columns to the database tables
+            db:add-missing-indices                 Add missing indices to the database tables
+            db:add-missing-primary-keys
         """
-        # self.module.log("Occ::upgrade()")
-        pass
+        self.module.log("Occ::upgrade()")
+
+        args = []
+        args += self.occ_base_args
+
+        args.append("upgrade")
+        args.append("--no-ansi")
+        # args.append("--output")
+        # args.append("json")
+
+        self.module.log(msg=f" args: '{args}'")
+
+        rc, out, err = self._exec(args, check_rc=False)
+
+        self.module.log(msg=f" rc : '{rc}'")
+        self.module.log(msg=f" out: '{out.strip()}'")
+        self.module.log(msg=f" err: '{err.strip()}'")
+
+        if rc == 0:
+            self.module.log(msg="okay?")
+
+            err = "The upgrade was successful."
+
+        else:
+            err = out.strip()
+
+            pattern = re.compile(r"An unhandled exception has been thrown:\n(?P<exception>.*)\n.*", re.MULTILINE)
+            exception = re.search(pattern, err)
+
+            if exception:
+                err = exception.group("exception")
+
+        self.module.log(msg=f"= rc: {rc}, out: {out.strip()}, err: {err.strip()}")
+        return (rc, out, err)
 
     def check(self, check_installed: bool = False) -> (int, bool, str, str):
         """
             sudo -u www-data php occ check
         """
-        # self.module.log(f"Occ::check({check_installed})")
+        self.module.log(f"Occ::check(check_installed: {check_installed})")
         # self.module.log(msg="occ_check()")
 
         installed = False
@@ -365,7 +410,7 @@ class Occ():
     def _exec(self, args: list, check_rc: bool = True):
         """
         """
-        # self.module.log(msg=f"Occ::_exec({args}, {check_rc})")
+        self.module.log(msg=f"Occ::_exec(args: {args}, check_rc: {check_rc})")
 
         rc, out, err = self.module.run_command(args, cwd=self.working_dir, check_rc=check_rc)
 

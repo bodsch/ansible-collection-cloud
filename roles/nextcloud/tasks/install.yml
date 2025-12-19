@@ -284,12 +284,7 @@
         working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
         owner: "{{ nextcloud_owner }}"
       register: nc_status
-
-    # - name: validate state  # noqa no-handler
-    #   ansible.builtin.debug:
-    #     msg: "{{ nc_status.msg }}"
-    #   when:
-    #     - nc_status.upgrade
+      ignore_errors: true
 
     - name: try nextcloud update
       bodsch.cloud.nextcloud_occ:
@@ -297,14 +292,16 @@
         working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
         owner: "{{ nextcloud_owner }}"
       register: nc_update
+      ignore_errors: true
       when:
-        - nc_status.upgrade
+        - nc_status is defined
+        - nc_status.upgrade | default('false') | bool
 
-    # - name: validate state  # noqa no-handler
-    #   ansible.builtin.debug:
-    #     msg: "{{ nc_status.msg }}"
-    #   when:
-    #     - nc_status.upgrade | default('false') or nc_status.failed | default('false')
+    - name: validate state  # noqa no-handler
+      ansible.builtin.debug:
+        msg: "{{ nc_status.msg }}"
+      when:
+        - nc_status.upgrade | default('false') or nc_status.failed | default('false')
 
 - name: create custom fact file
   bodsch.core.facts:

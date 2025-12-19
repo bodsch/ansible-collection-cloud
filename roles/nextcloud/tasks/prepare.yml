@@ -21,17 +21,23 @@
     - package_version.available.major_version is defined
     - package_version.available.version_string_compressed is defined
 
+- name: check PHP compatibility for Nextcloud {{ nextcloud_version }}
+  bodsch.cloud.nextcloud_validate_php:
+    nextcloud_version: "{{ nextcloud_version }}"
+    php_version: "{{ php_version }}"
+    from_git: true
+  register: supported_php_version
+
 - name: do facts module to get latest information
   ansible.builtin.setup:
 
-- name: assert php_version for nextcloud {{ nextcloud_main_version }} ({{ nextcloud_version }})
+- name: assert supported php version for nextcloud {{ nextcloud_version }}
   ansible.builtin.assert:
     that:
-      - php_version is defined
-      - php_version is version_compare('8.1', '>=')
-    msg: "This role only works with PHP >= 8.1 .. found: {{ php_version }}"
-  when:
-    - nextcloud_main_version is version('2', '==', strict=False)
+      - supported_php_version is defined
+      - supported_php_version.compatible is defined
+      - supported_php_version.compatible
+    msg: "{{ supported_php_version.reason }}"
 
 - name: assert release type '{{ nextcloud_release_type }}' for version {{ nextcloud_version }}
   ansible.builtin.assert:

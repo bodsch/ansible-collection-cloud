@@ -1,6 +1,6 @@
 ---
 
-nextcloud_version: 31.0.5
+nextcloud_version: 32.0.3
 
 # switch between
 # releases      : https://download.nextcloud.com/server/releases/nextcloud-28.0.1.zip
