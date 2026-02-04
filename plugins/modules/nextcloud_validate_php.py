@@ -228,12 +228,12 @@ class NextcloudValidatePHPVersion:
         """
         self.module = module
 
+        self.module.log("NextcloudValidatePHPVersion::__init__()")
+
         # Required by argument_spec -> safe to cast for typing purposes
         self.nextcloud_version = cast(str, module.params.get("nextcloud_version"))
         self.php_version = cast(str, module.params.get("php_version"))
         self.versioncheck_file = f"https://github.com/nextcloud/server/blob/v{self.nextcloud_version}/lib/versioncheck.php"
-
-        # self.module.log("NextcloudValidatePHPVersion::__init__()")
 
     def run(self) -> PhpCompatibilityResult:
         """
@@ -242,7 +242,7 @@ class NextcloudValidatePHPVersion:
         Returns:
           A dictionary suitable for AnsibleModule.exit_json(...).
         """
-        # self.module.log("NextcloudValidatePHPVersion::run()")
+        self.module.log("NextcloudValidatePHPVersion::run()")
 
         return self.check_php_compatibility(
             versioncheck_url=self.versioncheck_file,
@@ -272,9 +272,9 @@ class NextcloudValidatePHPVersion:
             - excluded (list[str])
             - reason (str)
         """
-        # self.module.log(
-        #     f"NextcloudValidatePHPVersion::check_php_compatibility({versioncheck_url})"
-        # )
+        self.module.log(
+            f"NextcloudValidatePHPVersion::check_php_compatibility(versioncheck_url: {versioncheck_url}, timeout_seconds: {timeout_seconds})"
+        )
 
         php_source = self._fetch_text(versioncheck_url, timeout_seconds=timeout_seconds)
         constraints = self._parse_constraints(php_source)
@@ -295,6 +295,10 @@ class NextcloudValidatePHPVersion:
             if constraints.max_exclusive_id is not None
             else None
         )
+
+        self.module.log(f" - excluded_versions: {excluded_versions}")
+        self.module.log(f" - min_str          : {min_str}")
+        self.module.log(f" - max_str          : {max_str}")
 
         if (
             constraints.min_inclusive_id is not None
@@ -363,7 +367,7 @@ class NextcloudValidatePHPVersion:
         Returns:
           The raw content URL if conversion is possible, otherwise the original URL.
         """
-        # self.module.log(f"NextcloudValidatePHPVersion::_github_blob_to_raw({url})")
+        self.module.log(f"NextcloudValidatePHPVersion::_github_blob_to_raw(url: {url})")
 
         p = urlparse(url)
         if p.netloc.lower() == "raw.githubusercontent.com":
@@ -397,9 +401,9 @@ class NextcloudValidatePHPVersion:
         Raises:
           URLError / HTTPError: If the request fails.
         """
-        # self.module.log(
-        #     f"NextcloudValidatePHPVersion::_fetch_text({url}, {timeout_seconds})"
-        # )
+        self.module.log(
+            f"NextcloudValidatePHPVersion::_fetch_text(url: {url}, timeout_seconds: {timeout_seconds})"
+        )
 
         raw_url = self._github_blob_to_raw(url)
         req = Request(
@@ -436,14 +440,18 @@ class NextcloudValidatePHPVersion:
         Returns:
           PhpVersionConstraints derived from the file.
         """
-        # Keep the docstring, but avoid logging the full PHP source for performance/security.
-        # self.module.log("NextcloudValidatePHPVersion::_parse_constraints()")
+
+        self.module.log(
+            f"NextcloudValidatePHPVersion::_parse_constraints(php_source: {php_source})"
+        )
 
         min_incl: Optional[int] = None
         max_excl: Optional[int] = None
         excluded: Set[int] = set()
 
         for op, num_str in _CONSTRAINT_IF_RE.findall(php_source):
+
+            self.module.log(f"  - operator   : {op} / version id : {num_str}")
             vid = int(num_str)
 
             # if (PHP_VERSION_ID < X) => requires >= X
@@ -495,7 +503,9 @@ class NextcloudValidatePHPVersion:
         Raises:
           ValueError: If no version number can be parsed from the string.
         """
-        # self.module.log(f"NextcloudValidatePHPVersion::php_version_to_vid({version})")
+        self.module.log(
+            f"NextcloudValidatePHPVersion::php_version_to_vid(version: {version})"
+        )
 
         m = _PHP_VERSION_RE.search(version)
         if not m:

@@ -14,13 +14,13 @@ __metaclass__ = type
 
 
 class CollaboraVersion(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
         self.soffice_bin = module.params.get("soffice_bin")
@@ -37,8 +37,7 @@ class CollaboraVersion(object):
 
         if not soffice_bin_exists:
             return dict(
-                failed=True,
-                msg="Collabora Office was not installed correctly."
+                failed=True, msg="Collabora Office was not installed correctly."
             )
 
         else:
@@ -54,10 +53,7 @@ class CollaboraVersion(object):
             # self.module.log(msg=f"  err: '{err}'")
 
             if rc != 0:
-                return dict(
-                    failed=True,
-                    msg=f"{out} / {err}"
-                )
+                return dict(failed=True, msg=f"{out} / {err}")
 
             version_string = "unknown"
 
@@ -67,19 +63,19 @@ class CollaboraVersion(object):
             version = re.search(pattern, out)
 
             if version:
-                version_string = version.group('version')
+                version_string = version.group("version")
 
-            result['rc'] = rc
+            result["rc"] = rc
 
             if rc == 0:
-                result['failed'] = False
-                result['version'] = version_string
+                result["failed"] = False
+                result["version"] = version_string
 
         return result
 
     def _exec(self, command, check_rc=True):
         """
-          execute commands
+        execute commands
         """
         rc, out, err = self.module.run_command(command, check_rc=check_rc)
         # self.module.log(msg=f"  rc : '{rc}'")
@@ -96,10 +92,9 @@ def main():
     specs = dict(
         soffice_bin=dict(
             required=False,
-            type='str',
-            default="/opt/collaboraoffice/program/soffice.bin"
+            type="str",
+            default="/opt/collaboraoffice/program/soffice.bin",
         ),
-
     )
     module = AnsibleModule(
         argument_spec=specs,
@@ -115,5 +110,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

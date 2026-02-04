@@ -1,6 +1,6 @@
 ---
 
-nextcloud_version: "18-daily-{{ '%Y-%m-%d' | strftime( ( ansible_date_time.epoch | int ) - ( 86400 * 3 )  ) }}" # 2024-01-18
+nextcloud_version: "18-daily-{{ '%Y-%m-%d' | strftime( ( ansible_facts.date_time.epoch | int ) - ( 86400 * 3 )  ) }}" # 2024-01-18
 
 nextcloud_release_type: daily
 
@@ -28,7 +28,7 @@ nextcloud_defaults:
 
 nextcloud_background_jobs:
   type: 'systemd'
-  daemon: ""      # {{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  daemon: ""      # {{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
   enabled: true
   cron:
     minute: "*/5"

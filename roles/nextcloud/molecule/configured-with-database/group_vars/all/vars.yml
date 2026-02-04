@@ -57,7 +57,7 @@ nextcloud_defaults:
 
 nextcloud_background_jobs:
   type: 'cron'
-  daemon: "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  daemon: "{{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
   enabled: true
   cron:
     minute: "*/10"

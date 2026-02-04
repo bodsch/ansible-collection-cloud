@@ -65,7 +65,7 @@ nextcloud_php_daemon:
 
 nextcloud_background_jobs:
   type: cron          # alternative and currently not supported: webcron | ajax , maybe systemd
-  daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  daemon: ""          # "{{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
   enabled: true       # [true, false]
   cron:
     minute: ""

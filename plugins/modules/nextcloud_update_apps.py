@@ -7,334 +7,226 @@
 
 from __future__ import absolute_import, print_function
 
+from typing import Any, Dict, List, TypedDict, cast
+
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.apps import NextcloudApps
+from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.apps import (
+    NextcloudApps as NextcloudAppsHelper,
+)
 from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
 
-__metaclass__ = type
+# ---------------------------------------------------------------------------------------
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: nextcloud_update_apps
+author: "Bodo Schulz (@bodsch) <bodo@boone-schulz.de>"
+version_added: "1.0.0"
+
+short_description: Check for and apply Nextcloud app updates via occ
+description:
+  - Uses the Nextcloud C(occ) command to check for available app updates and optionally apply them.
+  - In C(check) state it returns whether updates exist and a mapping of apps to available versions.
+  - In C(update) state it updates all apps reported by C(occ update:check).
+
+options:
+  working_dir:
+    description:
+      - Path to the Nextcloud installation directory that contains the C(occ) script.
+    type: str
+    required: true
+  owner:
+    description:
+      - OS user used to execute C(occ) (typically C(www-data)).
+    type: str
+    required: false
+    default: www-data
+  state:
+    description:
+      - Whether to only check for updates or to apply updates.
+    type: str
+    required: false
+    default: check
+    choices:
+      - check
+      - update
+
+notes:
+  - Requires a working Nextcloud installation and permission to execute C(php occ) as the configured OS user.
+  - Nextcloud may require maintenance mode and/or upgrades before app updates can be applied.
+
+"""
+
+EXAMPLES = r"""
+- name: Check for available app updates
+  nextcloud_update_apps:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    state: check
+  register: app_updates
+
+- name: Print available updates
+  ansible.builtin.debug:
+    var: app_updates.applications
+
+- name: Apply all available app updates
+  nextcloud_update_apps:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    state: update
+"""
+
+RETURN = r"""
+changed:
+  description:
+    - In C(check) mode, always C(false).
+    - In C(update) mode, whether any apps were updated.
+  type: bool
+  returned: always
+failed:
+  description:
+    - Present in C(update) mode.
+    - Whether updating apps failed.
+  type: bool
+  returned: when state=update
+updates:
+  description:
+    - Present in C(check) mode.
+    - Whether at least one update is available.
+  type: bool
+  returned: when state=check
+applications:
+  description:
+    - Present in C(check) mode.
+    - Mapping of app name to available target version.
+  type: dict
+  returned: when state=check
+state:
+  description:
+    - Present in C(update) mode.
+    - Per-app update results.
+  type: list
+  elements: dict
+  returned: when state=update
+  sample:
+    - calendar:
+        failed: false
+        changed: true
+        msg: "successfully updated to version 4.0.0."
+"""
 
 
-class NextcloudApps(NextcloudApps):
-    """
-    """
-    module = None
+# ---------------------------------------------------------------------------------------
 
-    def __init__(self, module):
-        """
-        """
+
+class ModuleParams(TypedDict, total=False):
+    state: str
+    working_dir: str
+    owner: str
+
+
+class NextcloudApps(NextcloudAppsHelper):
+    """ """
+
+    module: AnsibleModule
+
+    def __init__(self, module: AnsibleModule):
+        """ """
         self.module = module
 
-        self.state = module.params.get("state")
-        self.working_dir = module.params.get("working_dir")
-        self.owner = module.params.get("owner")
+        params = cast(Dict[str, Any], module.params)
 
-        super().__init__(module, self.owner, self.working_dir)  # Ruft den Konstruktor der Basisklasse Occ auf
+        self.state: str = cast(str, params.get("state") or "check")
+        self.working_dir: str = cast(str, params.get("working_dir"))
+        self.owner: str = cast(str, params.get("owner") or "www-data")
 
-    def run(self):
-        """
-        """
+        super().__init__(
+            module, self.owner, self.working_dir
+        )  # Ruft den Konstruktor der Basisklasse Occ auf
+
+    def run(self) -> Dict[str, Any]:
+        """ """
         error, msg = self.self_check()
 
         if error:
-            return msg
+            return cast(Dict[str, Any], msg)
 
-        rc, installed, out, err = self.check(check_installed=True)
+        rc_check, installed, out, err = self.check(check_installed=True)
 
-        if not installed and rc == 1:
-            return dict(
-                failed=False,
-                changed=False,
-                msg=out
-            )
+        if not installed and rc_check == 1:
+            return dict(failed=False, changed=False, msg=out)
 
-        rc, update, applications, err = self.check_for_updates()
+        rc_updates, update, applications, err_updates = self.check_for_updates()
 
         if self.state == "check":
+            return dict(changed=False, updates=update, applications=applications)
+
+        # state == "update"
+        if rc_updates != 0:
+            # Keep return shape stable for update-mode: changed/failed/state
             return dict(
                 changed=False,
-                updates=update,
-                applications=applications
+                failed=True,
+                state=[
+                    {
+                        "__all__": dict(
+                            failed=True,
+                            changed=False,
+                            msg=(err_updates or "update:check failed").strip(),
+                        )
+                    }
+                ],
             )
-        else:
-            """
-            """
-            result_state = []
-            res = {}
 
-            for app, version in applications.items():
-                self.module.log(f"  - {app} : {version}")
+        if not applications:
+            return dict(changed=False, failed=False, state=[])
 
-                state = self.update_app(app)
+        result_state: List[Dict[str, Any]] = []
 
-                if rc == 0:
-                    res[app] = dict(
+        for app, version in applications.items():
+            self.module.log(f"  - {app} : {version}")
+
+            update_rc, _update_out, update_err = self.update_app(app)
+
+            if update_rc == 0:
+                res = {
+                    app: dict(
                         failed=False,
                         changed=True,
-                        msg=f"successfully updated to version {version}."
+                        msg=f"successfully updated to version {version}.",
                     )
-                else:
-                    res[app] = dict(
+                }
+            else:
+                res = {
+                    app: dict(
                         failed=True,
                         changed=False,
-                        msg=f"update to version {version} failed."
+                        msg=(
+                            update_err.strip() or f"update to version {version} failed."
+                        ),
                     )
+                }
 
-                result_state.append(res)
+            result_state.append(res)
 
-            _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
+        _state, _changed, _failed, _state_detail, _changed_detail, failed = results(
+            self.module, result_state
+        )
 
-            result = dict(
-                changed=_changed,
-                failed=failed,
-                state=result_state
-            )
+        result = dict(changed=_changed, failed=failed, state=result_state)
 
-            return result
-
-#         # ----
-#
-#         self._occ = os.path.join(self.working_dir, 'occ')
-#
-#         if not os.path.exists(self._occ):
-#             return dict(
-#                 failed=True,
-#                 changed=False,
-#                 msg="missing occ"
-#             )
-#
-#         os.chdir(self.working_dir)
-#
-#         rc, installed, out, err = self.occ_check(check_installed=True)
-#
-#         if not installed and rc == 1:
-#             return dict(
-#                 failed=False,
-#                 changed=False,
-#                 msg=out
-#             )
-#
-#         rc, update, applications, err = self.occ_check_for_updates()
-#
-#         if self.state == "check":
-#             return dict(
-#                 changed=False,
-#                 updates=update,
-#                 applications=applications
-#             )
-#         else:
-#             """
-#             """
-#             result_state = []
-#             res = {}
-#
-#             for app, version in applications.items():
-#                 self.module.log(f"  - {app} : {version}")
-#
-#                 state = self.occ_update_app(app)
-#
-#                 if rc == 0:
-#                     res[app] = dict(
-#                         failed=False,
-#                         changed=True,
-#                         msg=f"successfully updated to version {version}."
-#                     )
-#                 else:
-#                     res[app] = dict(
-#                         failed=True,
-#                         changed=False,
-#                         msg=f"update to version {version} failed."
-#                     )
-#
-#                 result_state.append(res)
-#
-#             _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
-#
-#             result = dict(
-#                 changed=_changed,
-#                 failed=failed,
-#                 state=result_state
-#             )
-#
-#             return result
-#
-#     def occ_check(self, check_installed=False):
-#         """
-#             sudo -u www-data php occ check
-#         """
-#         # self.module.log(msg=f"occ_check({check_installed})")
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("check")
-#         args.append("--no-ansi")
-#         args.append("--output")
-#         args.append("json")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         """
-#             not installed: "Nextcloud is not installed - only a limited number of commands are available"
-#             installed: ''
-#         """
-#
-#         if not check_installed:
-#             return rc, out, err
-#
-#         installed = False
-#
-#         if rc == 0:
-#             pattern = re.compile(r"Nextcloud is not installed.*", re.MULTILINE)
-#             is_installed = re.search(pattern, err)
-#
-#             if is_installed:
-#                 installed = False
-#             else:
-#                 installed = True
-#
-#         else:
-#             err = out.strip()
-#
-#             pattern = re.compile(r"An unhandled exception has been thrown:\n(?P<exception>.*)\n.*", re.MULTILINE)
-#             exception = re.search(pattern, err)
-#
-#             if exception:
-#                 err = exception.user("exception")
-#
-#         return (rc, installed, out, err)
-#
-#     def occ_check_for_updates(self, check_installed=False):
-#         """
-#         """
-#         self.module.log(msg=f"occ_check_for_updates({check_installed})")
-#
-#         app_names = []
-#         res = dict()
-#         update = False
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("update:check")
-#         args.append("--no-ansi")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         # self.module.log(msg=f"rc: {rc}, out: {out.strip()}, err: {err.strip()}")
-#         # self.module.log(msg=f"  {len(out)}")
-#         # self.module.log(msg=f"  {len(err)}")
-#
-#         if rc == 0:
-#             pattern = re.compile(r"Update for (?P<app>.*) to version (?P<version>.*) is available.*", flags=re.MULTILINE)  # | re.DOTALL)
-#
-#             for match in pattern.finditer(out):
-#                 # self.module.log(f"match : {match}")
-#                 app, version = match.groups()
-#                 # self.module.log(f"  - {app} : {version}")
-#                 res.update({app: version})
-#
-#         update = len(res) >= 1
-#
-#         # self.module.log(msg=f"= (rc: {rc}, update: {update}, out: {res}, err: {err})")
-#
-#         return (rc, update, res, err)
-#
-#     def occ_path_app(self, app_name):
-#         """
-#         """
-#         self.module.log(msg=f"occ_path_app({app_name})")
-#         _failed = True
-#         _changed = False
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("app:getpath")
-#         args.append("--no-ansi")
-#         args.append(app_name)
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         # self.module.log(msg=f"  out: '{out.strip()}')")
-#         # self.module.log(msg=f"  err: '{err.strip()}')")
-#
-#         if rc == 0:
-#             _installed = True
-#             _failed = False
-#             _changed = True
-#         else:
-#             _installed = False
-#             _failed = True
-#             _changed = False
-#
-#         return (_failed, _changed, _installed)
-#
-#     def occ_update_app(self, app_name):
-#         """
-#         """
-#         self.module.log(msg=f"occ_update_app({app_name})")
-#         _failed = True
-#         _changed = False
-#         _msg = ""
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("app:update")
-#         args.append("--no-ansi")
-#         args.append(app_name)
-#
-#         self.module.log(msg=f"args: {args}")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         return (rc, out, err)
-#
-#     def __exec(self, commands, check_rc=True):
-#         """
-#         """
-#         rc, out, err = self.module.run_command(
-#             commands,
-#             cwd=self.working_dir,
-#             check_rc=check_rc)
-#
-#         # self.module.log(msg=f"  rc : '{rc}'")
-#         if rc != 0:
-#             self.module.log(msg=f"cmd: '{commands}'")
-#             self.module.log(msg=f"  rc : '{rc}'")
-#             self.module.log(msg=f"  out: '{out}'")
-#             self.module.log(msg=f"  err: '{err}'")
-#             for line in err.splitlines():
-#                 self.module.log(msg=f"   {line}")
-#
-#         return rc, out, err
+        return result
 
 
-def main():
-    """
-    """
+def main() -> None:
+    """ """
     specs = dict(
         state=dict(
             default="check",
-            choices=[
-                "check",
-                "update"
-            ],
+            choices=["check", "update"],
         ),
-        working_dir=dict(
-            required=True,
-            type=str
-        ),
-        owner=dict(
-            required=False,
-            type=str,
-            default="www-data"
-        ),
+        working_dir=dict(required=True, type=str),
+        owner=dict(required=False, type=str, default="www-data"),
     )
 
     module = AnsibleModule(
@@ -351,27 +243,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-
-"""
-sudo --user www-data php occ app
-
-      app:disable
-      app:enable
-      app:getpath
-      app:install
-      app:list
-      app:remove
-      app:update
-
-      config:app:delete
-      config:app:get
-      config:app:set
-      files:scan-app-data
-      integrity:check-app
-      integrity:sign-app
-      user:add-app-password
-
-"""

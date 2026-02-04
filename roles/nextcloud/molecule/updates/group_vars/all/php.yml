@@ -71,7 +71,7 @@ php_modules:
       extension=intl
       intl.default_locale=de
   - name: xmlrpc
-    enabled: "{{ 'false' if ansible_os_family | lower == 'archlinux' else 'true' }}"
+    enabled: "{{ 'false' if ansible_facts.os_family | lower == 'archlinux' else 'true' }}"
     priority: 20
     content: |
       extension=xmlrpc

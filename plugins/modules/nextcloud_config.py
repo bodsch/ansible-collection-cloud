@@ -6,1048 +6,246 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-import os
+
+from typing import Any, Dict, Optional, TypedDict, cast
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
-from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.config import NextcloudConfig
+from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.config import (
+    NextcloudConfig,
+)
+from ansible_collections.bodsch.core.plugins.module_utils.directory import (
+    create_directory,
+)
+
+# ---------------------------------------------------------------------------------------
+
+DOCUMENTATION = r"""
+---
+module: nextcloud_config
+author: "Bodo Schulz (@bodsch) <bodo@boone-schulz.de>"
+version_added: "1.0.0"
+
+short_description: Manage Nextcloud system configuration via occ config:import
+description:
+  - Applies Nextcloud system configuration using the Nextcloud C(occ) command.
+  - Builds a JSON config payload and imports it via C(occ config:import).
+  - Detects changes by comparing a generated JSON snapshot to the last applied snapshot.
+  - Optionally generates a side-by-side diff of the configuration changes.
+
+options:
+  working_dir:
+    description:
+      - Path to the Nextcloud installation directory that contains the C(occ) script.
+    type: str
+    required: true
+  owner:
+    description:
+      - OS user used to execute C(occ) and to fix ownership on config files.
+    type: str
+    required: false
+    default: www-data
+  group:
+    description:
+      - OS group used to fix ownership on config files.
+    type: str
+    required: false
+    default: www-data
+  trusted_domains:
+    description:
+      - Nextcloud trusted domains list (maps to C(trusted_domains) in Nextcloud system config).
+    type: list
+    elements: str
+    required: false
+  config_parameters:
+    description:
+      - Dictionary of Nextcloud system configuration parameters.
+      - This is a structured object interpreted by the module utilities (e.g. language, locale, mail, proxy, logging, caching).
+      - Unknown keys are ignored by the underlying implementation.
+    type: dict
+    required: false
+  database:
+    description:
+      - Database related configuration overrides (e.g. MySQL utf8mb4/collation, dbuser/dbpassword/dbhost/dbname).
+      - Structure is interpreted by the module utilities.
+    type: dict
+    required: false
+  diff_output:
+    description:
+      - If enabled, return a side-by-side diff when changes are applied.
+    type: bool
+    required: false
+    default: false
+notes:
+  - The module stores a snapshot file C(config/ansible.json) under the Nextcloud working directory to detect changes.
+  - A backup of C(config/config.php) may be created during updates and restored if validation fails.
+"""
+
+EXAMPLES = r"""
+- name: Configure Nextcloud trusted domains and basic settings
+  nextcloud_config:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    group: www-data
+    trusted_domains:
+      - cloud.example.com
+      - cloud.internal.lan
+    diff_output: true
+    config_parameters:
+      language:
+        default: en
+      locale:
+        default: en_US
+      phone_region: US
+      theme: mytheme
+      logging:
+        type: file
+        file: /var/log/nextcloud/nextcloud.log
+        level: 2
+
+- name: Configure mail settings
+  nextcloud_config:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    group: www-data
+    config_parameters:
+      mail:
+        domain: example.com
+        from_address: nextcloud
+        mode: smtp
+        hostname: smtp.example.com
+        port: 587
+        secure: tls
+        auth:
+          enabled: true
+          username: smtp-user
+          password: "super-secret"
+
+- name: Configure database-related overrides (example)
+  nextcloud_config:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    group: www-data
+    database:
+      type: mysql
+      username: nextcloud
+      password: "db-secret"
+      hostname: 127.0.0.1
+      port: "3306"
+      schema: nextcloud
+      mysql:
+        utf8mb4: true
+        collation: utf8mb4_general_ci
+"""
+
+RETURN = r"""
+changed:
+  description: Whether the configuration was changed and imported.
+  type: bool
+  returned: always
+failed:
+  description: Whether the module failed.
+  type: bool
+  returned: always
+msg:
+  description: Human-readable summary message.
+  type: str
+  returned: always
+diff:
+  description:
+    - Side-by-side diff output when C(diff_output=true) and changes occurred.
+    - The exact format depends on the diff utility implementation (often a list of lines).
+  type: raw
+  returned: when supported
+"""
 
 
-__metaclass__ = type
+# ---------------------------------------------------------------------------------------
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+
+class NextcloudConfigParams(TypedDict, total=False):
+    owner: str
+    group: str
+    config_parameters: Dict[str, Any]
+    trusted_domains: list
+    database: Dict[str, Any]
+    diff_output: bool
 
 
 class NextcloudClient(NextcloudConfig):
-    """
-    """
-    module = None
+    """ """
 
-    def __init__(self, module):
-        """
-        """
+    module: AnsibleModule
+
+    def __init__(self, module: AnsibleModule):
+        """ """
         self.module = module
+
+        params = cast(Dict[str, Any], module.params)
 
         # self._occ = module.get_bin_path('console', False)
 
-        self.working_dir = module.params.get("working_dir")
+        self.working_dir = cast(str, params.get("working_dir"))
         # self.data_dir = module.params.get("data_dir")
-        self.owner = module.params.get("owner")
-        self.group = module.params.get("group")
-        self.config_parameters = module.params.get("config_parameters")
-        self.trusted_domains = module.params.get("trusted_domains")
-        self.database = module.params.get("database")
-        self.diff_output = module.params.get("diff_output")
+        self.owner = cast(str, params.get("owner"))
+        self.group = cast(str, params.get("group"))
+        self.config_parameters = cast(
+            Optional[Dict[str, Any]], params.get("config_parameters")
+        )
+        self.trusted_domains = cast(Optional[list], params.get("trusted_domains"))
+        self.database = cast(Optional[Dict[str, Any]], params.get("database"))
+        self.diff_output = cast(bool, params.get("diff_output"))
 
         self.cache_directory = "/var/cache/ansible/nextcloud"
 
-        super().__init__(module, owner=self.owner,
-                         working_dir=self.working_dir,
-                         cache_directory=self.cache_directory)
+        super().__init__(
+            module,
+            owner=self.owner,
+            working_dir=self.working_dir,
+            cache_directory=self.cache_directory,
+        )
 
-        pid = os.getpid()
-        self.tmp_directory = os.path.join("/run/.ansible", f"nextcloud.{str(pid)}")
+        # NOTE: tmp_directory is already set by NextcloudConfig.__init__ using the current PID.
+        # Keeping it in the base class avoids duplication and prevents accidental divergence.
 
-    def run(self):
-        """
-        """
+    def run(self) -> Dict[str, Any]:
+        """ """
         create_directory(directory=self.tmp_directory, mode="0750")
         create_directory(directory=self.cache_directory, mode="0750")
 
         error, msg = self.self_check()
 
         if error:
-            return msg
+            return cast(Dict[str, Any], msg)
 
         rc, installed, out, err = self.check(check_installed=True)
 
         if not installed and rc == 1:
-            return dict(
-                failed=False,
-                changed=False,
-                msg=out
-            )
+            return dict(failed=False, changed=False, msg=out)
 
-        _config = dict(
+        _config: NextcloudConfigParams = dict(
             owner=self.owner,
             group=self.group,
-            config_parameters=self.config_parameters,
-            trusted_domains=self.trusted_domains,
-            database=self.database,
-            diff_output=self.diff_output,
+            config_parameters=self.config_parameters or {},
+            trusted_domains=self.trusted_domains or [],
+            database=self.database or {},
+            diff_output=bool(self.diff_output),
         )
 
         result = self.check_config(params=_config)
 
-        return result
+        return cast(Dict[str, Any], result)
 
 
-#         tmp_file = os.path.join(self.tmp_directory, "ansible.json")
-#
-#         changed, old_checksum = self.check_config()
-#         new_file = False
-#         msg = "The configuration has not been changed."
-#
-#         if changed:
-#             new_file = (old_checksum is None)
-#             _config_backup = os.path.join(self.working_dir, 'config', f"config.{os.getpid()}.bck")
-#
-#             if self.diff_output:
-#                 difference = self.create_diff(self.ansible_json_file, data)
-#                 _diff = difference
-#
-#             # create backup of existing config
-#             if os.path.exists(self.ansible_json_file):
-#                 shutil.copyfile(self.nc_config_file, _config_backup)
-#
-#             shutil.copyfile(tmp_file, self.ansible_json_file)
-#
-#             """
-#                 import new config
-#             """
-#             rc, out, err = self.occ.import_file(self.ansible_json_file)
-#
-#             """
-#                 test new config
-#             """
-#             rc, err = self.occ.status()
-#
-#             if rc != 0:
-#                 """
-#                     restore last running configuration
-#                 """
-#                 if os.path.exists(_config_backup):
-#                     os.remove(self.nc_config_file)
-#                     shutil.copyfile(_config_backup, self.nc_config_file)
-#
-#                     if os.path.exists(_config_backup):
-#                         os.remove(_config_backup)
-#
-#                 msg = "The configuration holds an fatal error."
-#                 msg += f" {err}"
-#
-#                 return dict(
-#                     failed=True,
-#                     msg=msg,
-#                     diff=_diff
-#                 )
-#
-#             else:
-#                 msg = "The configuration has been successfully updated."
-#
-#                 if os.path.exists(_config_backup):
-#                     # self.module.log(f" remove config backup {_config_backup}")
-#                     os.remove(_config_backup)
-#
-#         if new_file:
-#             msg = "The configuration was successfully created."
-#
-#         uid, gid = self.module.user_and_group(self.nc_config_file)
-#
-#         # self.module.log(f" uid {uid} / gid {gid}")
-#
-#         self.__fix_ownership(self.nc_config_file, self.owner, self.group, "0666")
-#
-#         shutil.rmtree(self.tmp_directory)
-#
-#         return dict(
-#             changed=changed,
-#             failed=False,
-#             msg=msg,
-#             diff=_diff
-#         )
-#
-#        return dict(failed=True)
-#
-#         # self.module.log(msg=f" console   : '{self._occ}'")
-#
-#         # if not os.path.exists(self._occ):
-#         #     return dict(
-#         #         failed=True,
-#         #         changed=False,
-#         #         msg="missing occ"
-#         #     )
-#
-#         # rc, installed, out, err = self.occ_check()
-#
-#
-#
-#         if not installed and rc == 1:
-#             return dict(
-#                 failed=False,
-#                 changed=False,
-#                 msg=out
-#             )
-#
-#         checksum = Checksum(self.module)
-#         _diff = []
-#
-#         os.chdir(self.working_dir)
-#
-#         data = self.config_opts()
-#
-#         # self.module.log(msg=f" config opts   : '{data}'")
-#
-#         create_directory(directory=self.tmp_directory, mode="0750")
-#         tmp_file = os.path.join(self.tmp_directory, "ansible.json")
-#
-#         self.__write_config(tmp_file, data)
-#
-#         new_checksum = checksum.checksum_from_file(tmp_file)
-#         old_checksum = checksum.checksum_from_file(self.ansible_json_file)
-#         changed = not (new_checksum == old_checksum)
-#         new_file = False
-#         msg = "The configuration has not been changed."
-#
-#         # self.module.log(f" tmp_file      : {tmp_file}")
-#         # self.module.log(f" config_file   : {self.ansible_json_file}")
-#         # self.module.log(f" changed       : {changed}")
-#         # self.module.log(f" new_checksum  : {new_checksum}")
-#         # self.module.log(f" old_checksum  : {old_checksum}")
-#
-#         # if self.data_dir:
-#         #     current_owner, current_group, current_mode = self.__file_state(self.data_dir)
-#         #     self.module.log(f" {self.data_dir} : {current_owner}:{current_mode} : {current_mode}")
-#
-#         if changed:
-#             new_file = (old_checksum is None)
-#             _config_backup = os.path.join(self.working_dir, 'config', f"config.{os.getpid()}.bck")
-#
-#             if self.diff_output:
-#                 difference = self.create_diff(self.ansible_json_file, data)
-#                 _diff = difference
-#
-#             # create backup of existing config
-#             if os.path.exists(self.ansible_json_file):
-#                 shutil.copyfile(self.nc_config_file, _config_backup)
-#
-#             shutil.copyfile(tmp_file, self.ansible_json_file)
-#
-#             """
-#                 import new config
-#             """
-#             rc, out, err = self.occ_import(self.ansible_json_file)
-#
-#             """
-#                 test new config
-#             """
-#             rc, err = self.occ_status()
-#
-#             if rc != 0:
-#                 """
-#                     restore last running configuration
-#                 """
-#                 if os.path.exists(_config_backup):
-#                     os.remove(self.nc_config_file)
-#                     shutil.copyfile(_config_backup, self.nc_config_file)
-#
-#                     if os.path.exists(_config_backup):
-#                         os.remove(_config_backup)
-#
-#                 msg = "The configuration holds an fatal error."
-#                 msg += f" {err}"
-#
-#                 return dict(
-#                     failed=True,
-#                     msg=msg,
-#                     diff=_diff
-#                 )
-#
-#             else:
-#                 msg = "The configuration has been successfully updated."
-#
-#                 if os.path.exists(_config_backup):
-#                     # self.module.log(f" remove config backup {_config_backup}")
-#                     os.remove(_config_backup)
-#
-#         if new_file:
-#             msg = "The configuration was successfully created."
-#
-#         uid, gid = self.module.user_and_group(self.nc_config_file)
-#
-#         # self.module.log(f" uid {uid} / gid {gid}")
-#
-#         self.__fix_ownership(self.nc_config_file, self.owner, self.group, "0666")
-#
-#         shutil.rmtree(self.tmp_directory)
-#
-#         return dict(
-#             changed=changed,
-#             failed=False,
-#             msg=msg,
-#             diff=_diff
-#         )
-#
-#     def check_config(self) -> (bool, str):
-#         """
-#         """
-#         checksum = Checksum(self.module)
-#         _diff = []
-#
-#         os.chdir(self.working_dir)
-#
-#         data = self.config_opts()
-#
-#         # self.module.log(msg=f" config opts   : '{data}'")
-#
-#         create_directory(directory=self.tmp_directory, mode="0750")
-#         tmp_file = os.path.join(self.tmp_directory, "ansible.json")
-#
-#         self.__write_config(tmp_file, data)
-#
-#         new_checksum = checksum.checksum_from_file(tmp_file)
-#         old_checksum = checksum.checksum_from_file(self.ansible_json_file)
-#         changed = not (new_checksum == old_checksum)
-#         # new_file = False
-#         # msg = "The configuration has not been changed."
-#
-#         return changed, old_checksum
-#
-#     def config_opts(self):
-#
-#         data = dict(
-#             system=dict()
-#         )
-#
-#         if validate(self.trusted_domains):
-#             data["system"]['trusted_domains'] = self.trusted_domains
-#
-#         if self.config_parameters:
-#             parameters = self.config_parameters
-#
-#             # self.module.log(f" parameters       : {parameters}")
-#
-#             language = parameters.get("language")
-#
-#             if language:
-#                 if language.get("default", None):
-#                     data["system"]['default_language'] = language.get("default", None)
-#
-#                 if language.get("force", None):
-#                     data["system"]['force_language'] = language.get("force", None)
-#
-#             locale = parameters.get("locale")
-#
-#             if locale:
-#                 if locale.get("default", None):
-#                     data["system"]['default_locale'] = locale.get("default", None)
-#
-#                 if locale.get("force", None):
-#                     data["system"]['force_locale'] = locale.get("force", None)
-#
-#             if parameters.get("phone_region", None):
-#                 data["system"]['default_phone_region'] = parameters.get("phone_region", None)
-#
-#             if parameters.get("defaultapps", None):
-#                 data["system"]['defaultapp'] = ",".join(parameters.get("defaultapps", []))
-#
-#             if parameters.get("knowledgebase_enabled", None):
-#                 data["system"]['knowledgebaseenabled'] = parameters.get("knowledgebase_enabled", None)
-#
-#             if parameters.get("allow_user_to_change_display_name", None):
-#                 data["system"]['allow_user_to_change_display_name'] = parameters.get("allow_user_to_change_display_name", None)
-#
-#             if parameters.get("remember_login_cookie_lifetime", None):
-#                 data["system"]['remember_login_cookie_lifetime'] = parameters.get("remember_login_cookie_lifetime", None)
-#
-#             if parameters.get("theme", None):
-#                 data["system"]["theme"] = parameters.get("theme")
-#             if parameters.get("enforce_theme", None):
-#                 data["system"]["enforce_theme"] = parameters.get("enforce_theme")
-#
-#             session = parameters.get("session")
-#
-#             if session:
-#                 if session.get("lifetime", None):
-#                     data["system"]['session_lifetime'] = session.get("lifetime", None)
-#
-#                 if session.get("relaxed_expiry", None):
-#                     data["system"]['session_relaxed_expiry'] = session.get("relaxed_expiry", None)
-#
-#                 if session.get("keepalive", None):
-#                     data["system"]['session_keepalive'] = session.get("keepalive", None)
-#
-#             maintenance = parameters.get("maintenance")
-#
-#             if maintenance:
-#                 maintenance_enabled = maintenance.get("enabled", True)
-#                 maintenance_window_start = maintenance.get("window_start", 1)
-#                 if maintenance_enabled and maintenance_window_start:
-#                     data["system"]['maintenance_window_start'] = maintenance_window_start
-#
-#             if parameters.get("auto_logout", None):
-#                 data["system"]['auto_logout'] = parameters.get("auto_logout", None)
-#
-#             token = parameters.get("token")
-#
-#             if token:
-#                 if token.get("auth_enforced", None):
-#                     data["system"]['token_auth_enforced'] = token.get("auth_enforced", None)
-#
-#                 if token.get("auth_activity_update", None):
-#                     data["system"]['token_auth_activity_update'] = token.get("auth_activity_update", None)
-#
-#             auth = parameters.get("auth")
-#
-#             if auth:
-#                 if auth.get("bruteforce", {}).get("protection", {}).get("enabled", None):
-#                     data["system"]['auth.bruteforce.protection.enabled'] = auth.get("bruteforce", {}).get("protection", {}).get("enabled", None)
-#
-#                 if auth.get("bruteforce", {}).get("protection", {}).get("testing", None):
-#                     data["system"]['auth.bruteforce.protection.testing'] = auth.get("bruteforce", {}).get("protection", {}).get("testing", None)
-#
-#                 if auth.get("webauthn", {}).get("enabled", None):
-#                     data["system"]['auth.webauthn.enabled'] = auth.get("webauthn", {}).get("enabled", None)
-#
-#                 if auth.get("storeCryptedPassword", None):
-#                     data["system"]['auth.storeCryptedPassword'] = auth.get("storeCryptedPassword", None)
-#
-#             if parameters.get("hide_login_form", None):
-#                 data["system"]['hide_login_form'] = parameters.get("hide_login_form", None)
-#
-#             if parameters.get("skeleton_directory", None):
-#                 data["system"]['skeletondirectory'] = parameters.get("skeleton_directory", None)
-#
-#             if parameters.get("template_directory", None):
-#                 data["system"]['templatedirectory'] = parameters.get("template_directory", None)
-#
-#             if parameters.get("temp_directory", None):
-#                 data["system"]['tempdirectory'] = parameters.get("temp_directory", None)
-#
-#             if parameters.get("update_directory", None):
-#                 data["system"]['updatedirectory'] = parameters.get("update_directory", None)
-#
-#             if parameters.get("data_directory", None):
-#                 data["system"]['datadirectory'] = parameters.get("data_directory", None)
-#
-#             if parameters.get("lost_password_link", None):
-#                 data["system"]['lost_password_link'] = parameters.get("lost_password_link", None)
-#
-#             if parameters.get("logo_url", None):
-#                 data["system"]['logo_url'] = parameters.get("logo_url", None)
-#
-#             mail = parameters.get("mail")
-#
-#             if mail:
-#                 if mail.get("domain", None):
-#                     data["system"]['mail_domain'] = mail.get("domain", None)
-#
-#                 if mail.get("from_address", None):
-#                     data["system"]['mail_from_address'] = mail.get("from_address", None)
-#
-#                 if mail.get("debug", None):
-#                     data["system"]['mail_smtpdebug'] = mail.get("debug", None)
-#
-#                 if mail.get("mode", None):
-#                     data["system"]['mail_smtpmode'] = mail.get("mode", None)
-#
-#                 if mail.get("hostname", None):
-#                     data["system"]['mail_smtphost'] = mail.get("hostname", None)
-#
-#                 if mail.get("port", None):
-#                     data["system"]['mail_smtpport'] = mail.get("port", None)
-#
-#                 if mail.get("timeout", None):
-#                     data["system"]['mail_smtptimeout'] = mail.get("timeout", None)
-#
-#                 if mail.get("secure", None):
-#                     data["system"]['mail_smtpsecure'] = mail.get("secure", None)
-#
-#                 mail_auth = mail.get("auth")
-#
-#                 if mail_auth:
-#                     mail_auth_enabled = mail_auth.get("enabled", False)
-#
-#                     if mail_auth_enabled:
-#                         if mail_auth.get("enabled", False):
-#                             data["system"]['mail_smtpauth'] = mail_auth_enabled
-#
-#                         if mail_auth.get("username", None):
-#                             data["system"]['mail_smtpname'] = mail_auth.get("username", None)
-#
-#                         if mail_auth.get("password", None):
-#                             data["system"]['mail_smtppassword'] = mail_auth.get("password", None)
-#
-#                         # if mail_auth.get("type", None):
-#                         #    data["system"]['mail_smtpauthtype'] = mail_auth.get("type", None)
-#
-#                 if mail.get("template_class", None):
-#                     template_class = mail.get("template_class", '\\OC\\Mail\\EMailTemplate')
-#                     t2 = template_class.replace('\\\\', '\\')
-#                     # self.module.log(f" template_class       : {template_class}")
-#                     # template_class = template_class.encode().decode('unicode_escape')
-#                     # self.module.log(f" template_class       : {template_class.encode().decode('unicode_escape')}")
-#                     # self.module.log(f" template_class       : {t2}")
-#
-#                     data["system"]['mail_template_class'] = t2
-#
-#                 if mail.get("send_plaintext_only", None):
-#                     data["system"]['mail_send_plaintext_only'] = mail.get("send_plaintext_only", None)
-#
-#                 if mail.get("stream_options", None):
-#                     data["system"]['mail_smtpstreamoptions'] = mail.get("stream_options", None)
-#
-#                 if mail.get("sendmailmode", None):
-#                     data["system"]['mail_sendmailmode'] = mail.get("sendmailmode", None)
-#
-#             proxy = parameters.get("proxy")
-#
-#             if proxy:
-#                 proxy_overwrite = proxy.get("overwrite")
-#
-#                 if proxy_overwrite:
-#                     if proxy_overwrite.get("hostname", None):
-#                         data["system"]['overwritehost'] = proxy_overwrite.get("hostname", None)
-#
-#                     if proxy_overwrite.get("protocol", None):
-#                         data["system"]['overwriteprotocol'] = proxy_overwrite.get("protocol", None)
-#
-#                     if proxy_overwrite.get("web_root", None):
-#                         data["system"]['overwritewebroot'] = proxy_overwrite.get("web_root", None)
-#
-#                     if proxy_overwrite.get("cond_addr", None):
-#                         data["system"]['overwritecondaddr'] = proxy_overwrite.get("cond_addr", None)
-#
-#                     if proxy_overwrite.get("cli_url", None):
-#                         data["system"]['overwrite.cli.url'] = proxy_overwrite.get("cli_url", None)
-#
-#                 proxy_htaccess = proxy.get("htaccess")
-#
-#                 if proxy_htaccess:
-#                     if proxy_htaccess.get("rewrite_base", None):
-#                         data["system"]['htaccess.RewriteBase'] = proxy_htaccess.get("rewrite_base", None)
-#
-#                     if proxy_htaccess.get("ignore_front_controller", None):
-#                         data["system"]['htaccess.IgnoreFrontController'] = proxy_htaccess.get("ignore_front_controller", None)
-#
-#                 if proxy.get("proxy_name", None):
-#                     data["system"]['proxy'] = proxy.get("proxy_name", None)
-#
-#                 if proxy.get("password", None):
-#                     data["system"]['proxyuserpwd'] = proxy.get("password", None)
-#
-#                 if proxy.get("exclude", None):
-#                     data["system"]['proxyexclude'] = proxy.get("exclude", None)
-#
-#                 if proxy.get("allow_local_remote_servers", None):
-#                     data["system"]['allow_local_remote_servers'] = proxy.get("allow_local_remote_servers", None)
-#
-#             trashbin = parameters.get("trashbin")
-#
-#             if trashbin:
-#                 if trashbin.get("retention_obligation", None):
-#                     data["system"]['trashbin_retention_obligation'] = trashbin.get("retention_obligation", None)
-#
-#             versions = parameters.get("versions")
-#
-#             if versions:
-#                 if versions.get("retention_obligation", None):
-#                     data["system"]['versions_retention_obligation'] = versions.get("retention_obligation", None)
-#
-#             if parameters.get("app_code_checker", None):
-#                 data["system"]['appcodechecker'] = parameters.get("app_code_checker", None)
-#
-#             update = parameters.get("update")
-#
-#             if update:
-#                 if update.get("checker", None):
-#                     data["system"]['updatechecker'] = update.get("checker", None)
-#
-#                 if update.get("server_url", None):
-#                     data["system"]['updater.server.url'] = update.get("server_url", None)
-#
-#                 if update.get("release_channel", None):
-#                     data["system"]['updater.release.channel'] = update.get("release_channel", None)
-#
-#             if parameters.get("has_internet_connection", None):
-#                 data["system"]['has_internet_connection'] = parameters.get("has_internet_connection", None)
-#
-#             checks = parameters.get("checks")
-#
-#             if checks:
-#                 if checks.get("connectivity_domains", None):
-#                     data["system"]['connectivity_check_domains'] = checks.get("connectivity_domains", None)
-#
-#                 if checks.get("working_wellknown_setup", None):
-#                     data["system"]['check_for_working_wellknown_setup'] = checks.get("working_wellknown_setup", None)
-#
-#                 if checks.get("working_htaccess", None):
-#                     data["system"]['check_for_working_htaccess'] = checks.get("working_htaccess", None)
-#
-#                 if checks.get("data_directory_permissions", None):
-#                     data["system"]['check_data_directory_permissions'] = checks.get("data_directory_permissions", None)
-#
-#             if parameters.get("config_is_read_only", None):
-#                 data["system"]['config_is_read_only'] = parameters.get("config_is_read_only", None)
-#
-#             logging = parameters.get("logging")
-#
-#             if logging:
-#                 if logging.get("type", None):
-#                     data["system"]['log_type'] = logging.get("type", None)
-#
-#                 if logging.get("type_audit", None):
-#                     data["system"]['log_type_audit'] = logging.get("type_audit", None)
-#
-#                 if logging.get("file", None):
-#                     data["system"]['logfile'] = logging.get("file", None)
-#
-#                 if logging.get("logfile_audit", None):
-#                     data["system"]['logfile_audit'] = logging.get("logfile_audit", None)
-#
-#                 if logging.get("filemode", None):
-#                     data["system"]['logfilemode'] = logging.get("filemode", None)
-#
-#                 if logging.get("level", None):
-#                     data["system"]['loglevel'] = logging.get("level", None)
-#
-#                 if logging.get("level_frontend", None):
-#                     data["system"]['loglevel_frontend'] = logging.get("level_frontend", None)
-#
-#                 if logging.get("syslog_tag", None):
-#                     data["system"]['syslog_tag'] = logging.get("syslog_tag", None)
-#
-#                 if logging.get("syslog_tag_audit", None):
-#                     data["system"]['syslog_tag_audit'] = logging.get("syslog_tag_audit", None)
-#
-#                 condition = logging.get("condition", {})
-#
-#                 if condition:
-#                     dictList = {}
-#                     for key, value in condition.items():
-#                         dictList[key] = value
-#                     data["system"]['log.condition'] = dictList
-#
-#                 if logging.get("dateformat", None):
-#                     data["system"]['logdateformat'] = logging.get("dateformat", None)
-#
-#                 if logging.get("timezone", None):
-#                     data["system"]['logtimezone'] = logging.get("timezone", None)
-#
-#                 if logging.get("query", None):
-#                     data["system"]['log_query'] = logging.get("query", None)
-#
-#                 if logging.get("rotate_size", None):
-#                     data["system"]['log_rotate_size'] = logging.get("rotate_size", None)
-#
-#             if parameters.get("profiler", None):
-#                 data["system"]['profiler'] = parameters.get("profiler", None)
-#
-#             customclient = parameters.get("customclient")
-#
-#             if customclient:
-#                 if customclient.get("desktop", None):
-#                     data["system"]['customclient_desktop'] = customclient.get("desktop", None)
-#
-#                 if customclient.get("android", None):
-#                     data["system"]['customclient_android'] = customclient.get("android", None)
-#
-#                 if customclient.get("ios", None):
-#                     data["system"]['customclient_ios'] = customclient.get("ios", None)
-#
-#                 if customclient.get("ios_appid", None):
-#                     data["system"]['customclient_ios_appid'] = customclient.get("ios_appid", None)
-#
-#             apps = parameters.get("apps")
-#
-#             # self.module.log(f" apps       : {apps}")
-#
-#             if apps:
-#                 if apps.get("store", {}).get("enabled", None):
-#                     data["system"]['appstoreenabled'] = apps.get("store", {}).get("enabled", None)
-#
-#                 if apps.get("store", {}).get("url", None):
-#                     data["system"]['appstoreurl'] = apps.get("store", {}).get("url", None)
-#
-#                 if apps.get("allowlist", None):
-#                     data["system"]['appsallowlist'] = apps.get("allowlist", None)
-#
-#                 if apps.get("paths", None):
-#                     data["system"]['apps_paths'] = apps.get("paths", None)
-#
-#             image_previews = parameters.get("image_previews")
-#
-#             if image_previews:
-#                 if image_previews.get("enabled", None):
-#                     data["system"]['enable_previews'] = image_previews.get("enabled", None)
-#
-#                 if image_previews.get("concurrency", {}).get("all", None):
-#                     data["system"]['preview_concurrency_all'] = image_previews.get("concurrency", {}).get("all", None)
-#
-#                 if image_previews.get("concurrency", {}).get("new", None):
-#                     data["system"]['preview_concurrency_new'] = image_previews.get("concurrency", {}).get("new", None)
-#
-#                 if image_previews.get("max_x", None):
-#                     data["system"]['preview_max_x'] = image_previews.get("max_x", None)
-#
-#                 if image_previews.get("max_y", None):
-#                     data["system"]['preview_max_y'] = image_previews.get("max_y", None)
-#
-#                 if image_previews.get("max_filesize_image", None):
-#                     data["system"]['preview_max_filesize_image'] = image_previews.get("max_filesize_image", None)
-#
-#                 if image_previews.get("max_memory", None):
-#                     data["system"]['preview_max_filesize_image'] = image_previews.get("max_memory", None)
-#
-#                 if image_previews.get("preview_max_memory", None):
-#                     data["system"]['preview_max_filesize_image'] = image_previews.get("preview_max_memory", None)
-#
-#                 if image_previews.get("libreoffice_path", None):
-#                     data["system"]['preview_libreoffice_path'] = image_previews.get("libreoffice_path", None)
-#
-#                 if image_previews.get("office_cl_parameters", None):
-#                     data["system"]['preview_office_cl_parameters'] = " ".join(image_previews.get("office_cl_parameters", None))
-#
-#                 if image_previews.get("ffmpeg_path", None):
-#                     data["system"]['preview_ffmpeg_path'] = image_previews.get("ffmpeg_path", None)
-#
-#                 if image_previews.get("preview_imaginary_url", None):
-#                     data["system"]['preview_libreoffice_path'] = image_previews.get("imaginary_url", None)
-#
-#             memcache = parameters.get("memcache")
-#
-#             if memcache:
-#                 if memcache.get("local", None):
-#                     data["system"]['memcache.local'] = memcache.get("local", None)
-#
-#                 if memcache.get("distributed", None):
-#                     data["system"]['memcache.distributed'] = memcache.get("distributed", None)
-#
-#                 if memcache.get("locking", None):
-#                     data["system"]['memcache.locking'] = memcache.get("locking", None)
-#
-#                 memcache_servers = memcache.get("servers", [])
-#
-#                 if memcache_servers:
-#                     memchache_array = [list(x.values()) for x in memcache_servers]
-#                     data["system"]['memcached_servers'] = memchache_array
-#
-#                 if memcache.get("options", None):
-#                     data["system"]['memcached_options'] = memcache.get("options", None)
-#
-#             redis = parameters.get("redis")
-#
-#             # TODO
-#             # no array .. only single entry
-#             if redis:
-#                 redis_array = []
-#                 for r in redis:
-#                     a = {}
-#                     if r.get("host", None):
-#                         a["host"] = r.get("host", None)
-#                     if r.get("port", None):
-#                         a["port"] = r.get("port", None)
-#                     if r.get("timeout", None):
-#                         a["timeout"] = r.get("timeout", None)
-#                     if r.get("password", None):
-#                         a["password"] = r.get("password", None)
-#                     if r.get("dbindex", None):
-#                         a["dbindex"] = r.get("dbindex", None)
-#
-#                     redis_array.append(a)
-#                 data["system"]["redis"] = redis_array
-#
-#         if self.database:
-#             parameters = self.database
-#
-#             if parameters.get("type", None) == "mysql":
-#                 if parameters.get("mysql", {}).get("utf8mb4", None):
-#                     data["system"]['mysql.utf8mb4'] = parameters.get("mysql", {}).get("utf8mb4", None)
-#
-#                 if parameters.get("mysql", {}).get("collation", None):
-#                     data["system"]['mysql.collation'] = parameters.get("mysql", {}).get("collation", None)
-#
-#                 if parameters.get("username", None):
-#                     data["system"]['dbuser'] = parameters.get("username", None)
-#
-#                 if parameters.get("password", None):
-#                     data["system"]['dbpassword'] = parameters.get("password", None)
-#
-#                 if parameters.get("hostname", None):
-#                     data["system"]['dbhost'] = parameters.get("hostname", None)
-#
-#                 if parameters.get("port", None):
-#                     data["system"]['dbport'] = parameters.get("port", None)
-#
-#                 if parameters.get("schema", None):
-#                     data["system"]['dbname'] = parameters.get("schema", None)
-#
-#                 if parameters.get("tableprefix", None):
-#                     data["system"]['dbtableprefix'] = parameters.get("tableprefix", None)
-#
-#             if parameters.get("type", None) == "sqlite3":
-#                 if parameters.get("sqlite", {}).get("journal_mode", None):
-#                     data["system"]['sqlite.journal_mode'] = parameters.get("sqlite", {}).get("journal_mode", None)
-#
-#         """
-#
-#         """
-#
-#         return data
-#
-#     def create_diff(self, config_file, data):
-#         """
-#         """
-#         old_data = dict()
-#
-#         if os.path.isfile(config_file):
-#             with open(config_file) as json_file:
-#                 old_data = json.load(json_file)
-#
-#         side_by_side = SideBySide(self.module, old_data, data)
-#         diff_side_by_side = side_by_side.diff(width=140, left_title="  Original", right_title="  Update")
-#
-#         return diff_side_by_side
-#
-#     def occ_check(self):
-#         """
-#             sudo -u www-data php occ check
-#         """
-#         # self.module.log(msg="occ_check()")
-#
-#         installed = False
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("check")
-#         args.append("--no-ansi")
-#
-#         # self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         """
-#             not installed: "Nextcloud is not installed - only a limited number of commands are available"
-#             installed: ''
-#         """
-#         # self.module.log(msg=f" rc : '{rc}'")
-#         # self.module.log(msg=f" out: '{out.strip()}'")
-#         # self.module.log(msg=f" err: '{err.strip()}'")
-#
-#         if rc == 0:
-#             pattern = re.compile(r"Nextcloud is not installed.*", re.MULTILINE)
-#             # installed_out = re.search(pattern_1, out)
-#             is_installed = re.search(pattern, err)
-#
-#             # self.module.log(msg=f" out: '{installed_out}'")
-#             # self.module.log(msg=f" err: '{is_installed}' {type(is_installed)}")
-#
-#             if is_installed:
-#                 installed = False
-#             else:
-#                 installed = True
-#
-#         else:
-#             err = out.strip()
-#
-#             pattern = re.compile(r"An unhandled exception has been thrown:\n(?P<exception>.*)\n.*", re.MULTILINE)
-#             exception = re.search(pattern, err)
-#
-#             if exception:
-#                 err = exception.group("exception")
-#
-#         # self.module.log(msg=f"{rc} '{installed}' '{out}' '{err}'")
-#
-#         return (rc, installed, out, err)
-#
-#     def occ_status(self):
-#         """
-#             sudo -u www-data php occ status
-#         """
-#         # version_string = None
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("status")
-#         args.append("--no-ansi")
-#
-#         # self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         if rc != 0:
-#             err = out.strip()
-#
-#             pattern = re.compile(r"An unhandled exception has been thrown:\n(?P<exception>.*).*", re.MULTILINE)
-#             exception = re.search(pattern, err)
-#
-#             if exception:
-#                 err = exception.group("exception")
-#
-#         return rc, err
-#
-#     def occ_import(self, config_file):
-#         """
-#             sudo -u www-data php occ config:import config/ansible.json
-#         """
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("config:import")
-#         args.append(config_file)
-#         args.append("--no-ansi")
-#
-#         # self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         return rc, out, err
-#
-#     def __values_as_string(self, values):
-#         """
-#         """
-#         result = {}
-#         # self.module.log(msg=f"{json.dumps(values, indent=2, sort_keys=False)}")
-#
-#         if isinstance(values, dict):
-#             for k, v in sorted(values.items()):
-#                 if isinstance(v, bool):
-#                     v = str(v).lower()
-#                 result[k] = str(v)
-#
-#         # self.module.log(msg=f"{json.dumps(result, indent=2, sort_keys=False)}")
-#
-#         return result
-#
-#     def __write_config(self, file_name, data):
-#         """
-#         """
-#         with open(file_name, 'w') as fp:
-#             json_data = json.dumps(data, indent=2, sort_keys=False)
-#             fp.write(f'{json_data}\n')
-#
-#     def __exec(self, commands, check_rc=True):
-#         """
-#         """
-#         rc, out, err = self.module.run_command(commands, cwd=self.working_dir, check_rc=check_rc)
-#
-#         # self.module.log(msg=f"  rc : '{rc}'")
-#         if rc != 0:
-#             self.module.log(msg=f"cmd: '{commands}'")
-#             self.module.log(msg=f"  out: '{out}')")
-#             self.module.log(msg=f"  err: '{err}')")
-#
-#         return rc, out, err
-#
-#     def __file_state(self, file_name):
-#         """
-#         """
-#         current_owner = None
-#         current_group = None
-#         current_mode = None
-#
-#         if os.path.exists(file_name):
-#             _state = os.stat(file_name)
-#             try:
-#                 current_owner = pwd.getpwuid(_state.st_uid).pw_uid
-#             except KeyError:
-#                 pass
-#
-#             try:
-#                 current_group = grp.getgrgid(_state.st_gid).gr_gid
-#             except KeyError:
-#                 pass
-#
-#             try:
-#                 current_mode = oct(_state.st_mode)[-4:]
-#             except KeyError:
-#                 pass
-#
-#         return current_owner, current_group, current_mode
-#
-#     def __fix_ownership(self, file_name, force_owner=None, force_group=None, force_mode=False):
-#         """
-#         """
-#         changed = False
-#         error_msg = None
-#
-#         if os.path.exists(file_name):
-#             current_owner, current_group, current_mode = self.__file_state(file_name)
-#
-#             # change mode
-#             if force_mode is not None and force_mode != current_mode:
-#                 try:
-#                     if isinstance(force_mode, int):
-#                         mode = int(str(force_mode), base=8)
-#                 except Exception as e:
-#                     error_msg = f" - ERROR '{e}'"
-#                     print(error_msg)
-#
-#                 try:
-#                     if isinstance(force_mode, str):
-#                         mode = int(force_mode, base=8)
-#                 except Exception as e:
-#                     error_msg = f" - ERROR '{e}'"
-#                     print(error_msg)
-#
-#                 os.chmod(file_name, mode)
-#
-#             # change ownership
-#             if force_owner is not None or force_group is not None and (force_owner != current_owner or force_group != current_group):
-#                 if force_owner is not None:
-#                     try:
-#                         force_owner = pwd.getpwnam(str(force_owner)).pw_uid
-#                     except KeyError:
-#                         force_owner = int(force_owner)
-#                         pass
-#                 elif current_owner is not None:
-#                     force_owner = current_owner
-#                 else:
-#                     force_owner = 0
-#
-#                 if force_group is not None:
-#                     try:
-#                         force_group = grp.getgrnam(str(force_group)).gr_gid
-#                     except KeyError:
-#                         force_group = int(force_group)
-#                         pass
-#                 elif current_group is not None:
-#                     force_group = current_group
-#                 else:
-#                     force_group = 0
-#
-#                 os.chown(
-#                     file_name,
-#                     int(force_owner),
-#                     int(force_group)
-#                 )
-#
-#             _owner, _group, _mode = self.__file_state(file_name)
-#
-#             if (current_owner != _owner) or (current_group != _group) or (current_mode != _mode):
-#                 changed = True
-#
-#         return changed, error_msg
-
-
-def main():
-    """
-    """
+def main() -> None:
+    """ """
     specs = dict(
-        working_dir=dict(
-            required=True,
-            type=str
-        ),
+        working_dir=dict(required=True, type=str),
         # data_dir=dict(
         #     required=False,
         #     type=str
         # ),
-        owner=dict(
-            required=False,
-            type=str,
-            default="www-data"
-        ),
-        group=dict(
-            required=False,
-            type=str,
-            default="www-data"
-        ),
+        owner=dict(required=False, type=str, default="www-data"),
+        group=dict(required=False, type=str, default="www-data"),
         config_parameters=dict(
             required=False,
             type=dict,
@@ -1056,15 +254,8 @@ def main():
             required=False,
             type=list,
         ),
-        database=dict(
-            required=False,
-            type=dict
-        ),
-        diff_output=dict(
-            required=False,
-            type='bool',
-            default=False
-        ),
+        database=dict(required=False, type=dict),
+        diff_output=dict(required=False, type="bool", default=False),
     )
 
     module = AnsibleModule(
@@ -1075,11 +266,9 @@ def main():
     kc = NextcloudClient(module)
     result = kc.run()
 
-    # module.log(msg=f"= result : '{result}'")
-
     module.exit_json(**result)
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

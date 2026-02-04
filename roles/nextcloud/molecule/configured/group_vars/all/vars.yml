@@ -1,6 +1,6 @@
 ---
 
-nextcloud_version: 31.0.5
+nextcloud_version: 32.0.5
 
 nextcloud_install_base_directory: /var/www/nextcloud.molecule.lan
 
@@ -35,7 +35,7 @@ nextcloud_defaults:
 
 nextcloud_background_jobs:
   type: 'systemd'
-  daemon: ""      # {{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  daemon: ""      # {{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
   enabled: true
   cron:
     minute: "*/5"

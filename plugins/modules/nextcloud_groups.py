@@ -7,432 +7,214 @@
 
 from __future__ import absolute_import, print_function
 
+from typing import Any, Dict, List, Optional, TypedDict, cast
+
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.identities import NextcloudIdentity
+from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.identities import (
+    NextcloudIdentity,
+)
 from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
 
-__metaclass__ = type
+# ---------------------------------------------------------------------------------------
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: nextcloud_groups
+author: "Bodo Schulz (@bodsch) <bodo@boone-schulz.de>"
+version_added: "1.0.0"
+
+short_description: Manage Nextcloud groups via occ
+description:
+  - Manage Nextcloud groups using the Nextcloud C(occ) command.
+  - Supports creating and removing groups.
+  - Uses C(occ group:list) to determine existing groups and behave idempotently.
+
+options:
+  working_dir:
+    description:
+      - Path to the Nextcloud installation directory that contains the C(occ) script.
+    type: str
+    required: true
+  owner:
+    description:
+      - OS user used to execute C(occ) (typically C(www-data)).
+    type: str
+    required: false
+    default: www-data
+  groups:
+    description:
+      - List of groups to manage.
+    type: list
+    required: false
+    default: []
+    elements: dict
+    suboptions:
+      name:
+        description:
+          - Group id to manage.
+        type: str
+        required: true
+      state:
+        description:
+          - Desired state of the group.
+          - C(present) ensures the group exists.
+          - Any other value is treated as removal (kept for backward compatibility of this module).
+        type: str
+        required: false
+        default: present
+      display_name:
+        description:
+          - Optional display name for the group when creating it.
+        type: str
+        required: false
+
+notes:
+  - Requires a working Nextcloud installation and permission to execute C(php occ) as the configured OS user.
+  - For idempotence, this module queries existing groups and only creates/removes when needed.
+
+"""
+
+EXAMPLES = r"""
+- name: Ensure groups are present
+  nextcloud_groups:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    groups:
+      - name: editors
+        state: present
+        display_name: Editors
+      - name: viewers
+        state: present
+
+- name: Remove a group
+  nextcloud_groups:
+    working_dir: /var/www/nextcloud
+    owner: www-data
+    groups:
+      - name: deprecated
+        state: absent
+"""
+
+RETURN = r"""
+changed:
+  description: Whether any group was changed (created or removed).
+  type: bool
+  returned: always
+failed:
+  description: Whether the module failed.
+  type: bool
+  returned: always
+state:
+  description:
+    - Per-group results.
+    - Each list element is a dict containing the group name as key and a result dict as value.
+  type: list
+  elements: dict
+  returned: always
+  sample:
+    - editors:
+        failed: false
+        changed: true
+        msg: "Group was successfully created."
+    - deprecated:
+        failed: false
+        changed: false
+        msg: "The group does not exist (anymore)."
+"""
+
+
+# ---------------------------------------------------------------------------------------
+
+
+class ModuleGroupItem(TypedDict, total=False):
+    name: str
+    state: str
+    display_name: Optional[str]
 
 
 class NextcloudGroups(NextcloudIdentity):
-    """
-    """
-    module = None
+    """ """
 
-    def __init__(self, module):
-        """
-        """
+    module: AnsibleModule
+
+    def __init__(self, module: AnsibleModule):
+        """ """
         self.module = module
 
-        self.groups = module.params.get("groups")
-        self.working_dir = module.params.get("working_dir")
-        self.owner = module.params.get("owner")
+        params = cast(Dict[str, Any], module.params)
+
+        self.groups: List[ModuleGroupItem] = params.get("groups") or []
+        self.working_dir: str = cast(str, params.get("working_dir"))
+        self.owner: str = cast(str, params.get("owner"))
 
         super().__init__(module, self.owner, self.working_dir)
 
-    def run(self):
-        """
-        """
+    def run(self) -> Dict[str, Any]:
+        """ """
 
         error, msg = self.self_check()
 
         if error:
-            return msg
+            return cast(Dict[str, Any], msg)
 
         rc, installed, out, err = self.check(check_installed=True)
 
         if not installed and rc == 1:
-            return dict(
-                failed=False,
-                changed=False,
-                msg=out
-            )
+            return dict(failed=False, changed=False, msg=out)
 
+        # Keep cached group list for idempotence checks.
         self.existing_groups = self.list_groups()
 
-        result_state = []
+        result_state: List[Dict[str, Any]] = []
 
         if self.groups:
             for group in self.groups:
-                group_state = group.get("state", "present")
+                group_state = (group.get("state") or "present").strip()
                 group_name = group.get("name", None)
                 group_display_name = group.get("display_name", None)
 
-                if group_name:
-                    res = {}
-                    if group_state == "present":
-                        if group_name in self.existing_groups:
-                            res[group_name] = dict(
-                                changed=False,
-                                msg="The group has already been created."
-                            )
-                        else:
-                            res[group_name] = self.create_group(name=group_name, display_name=group_display_name)
+                if not group_name:
+                    # Preserve previous behavior: silently skip invalid entries.
+                    continue
+
+                res: Dict[str, Any] = {}
+
+                if group_state == "present":
+                    if group_name in self.existing_groups:
+                        res[group_name] = dict(
+                            changed=False, msg="The group has already been created."
+                        )
                     else:
-                        if group_name in self.existing_groups:
-                            res[group_name] = self.remove_group(name=group_name)
-                        else:
-                            res[group_name] = dict(
-                                changed=False,
-                                msg="The group does not exist (anymore)."
-                            )
-
-                    result_state.append(res)
-
+                        res[group_name] = self.create_group(
+                            name=group_name, display_name=group_display_name
+                        )
                 else:
-                    pass
+                    # Treat any non-"present" as removal (preserves original behavior).
+                    if group_name in self.existing_groups:
+                        res[group_name] = self.remove_group(name=group_name)
+                    else:
+                        res[group_name] = dict(
+                            changed=False, msg="The group does not exist (anymore)."
+                        )
 
-        _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
+                result_state.append(res)
 
-        result = dict(
-            changed=_changed,
-            failed=False,
-            state=result_state
+        _state, _changed, _failed, state, changed, failed = results(
+            self.module, result_state
         )
+
+        # Preserve return shape: always failed=False at module level (as before).
+        result = dict(changed=_changed, failed=False, state=result_state)
 
         return result
 
 
-#         return dict(failed=True)
-#
-#         self._occ = os.path.join(self.working_dir, 'occ')
-#
-#         if not os.path.exists(self._occ):
-#             return dict(
-#                 failed=True,
-#                 changed=False,
-#                 msg="missing occ"
-#             )
-#
-#         os.chdir(self.working_dir)
-#
-#         rc, installed, out, err = self.occ_check(check_installed=True)
-#
-#         if not installed and rc == 1:
-#             return dict(
-#                 failed=False,
-#                 changed=False,
-#                 msg=out
-#             )
-#
-#         self.existing_groups = self.occ_list_groups()
-#
-#         result_state = []
-#
-#         if self.groups:
-#             for group in self.groups:
-#                 group_state = group.get("state", "present")
-#                 group_name = group.get("name", None)
-#                 group_display_name = group.get("display_name", None)
-#
-#                 if group_name:
-#                     res = {}
-#                     if group_state == "present":
-#                         if group_name in self.existing_groups:
-#                             res[group_name] = dict(
-#                                 changed=False,
-#                                 msg="The group has already been created."
-#                             )
-#                         else:
-#                             res[group_name] = self.occ_create_group(name=group_name, display_name=group_display_name)
-#                     else:
-#                         if group_name in self.existing_groups:
-#                             res[group_name] = self.occ_remove_group(name=group_name)
-#                         else:
-#                             res[group_name] = dict(
-#                                 changed=False,
-#                                 msg="The group does not exist (anymore)."
-#                             )
-#
-#                     result_state.append(res)
-#
-#                 else:
-#                     pass
-#
-#         _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
-#
-#         result = dict(
-#             changed=_changed,
-#             failed=False,
-#             state=result_state
-#         )
-#
-#         return result
-#
-#     def occ_check(self, check_installed=False):
-#         """
-#             sudo -u www-data php occ check
-#         """
-#         # self.module.log(msg=f"occ_check({check_installed})")
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("check")
-#         args.append("--no-ansi")
-#         args.append("--output")
-#         args.append("json")
-#
-#         # self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         """
-#             not installed: "Nextcloud is not installed - only a limited number of commands are available"
-#             installed: ''
-#         """
-#         # self.module.log(msg=f" rc : '{rc}'")
-#         # self.module.log(msg=f" out: '{out.strip()}'")
-#         # self.module.log(msg=f" err: '{err.strip()}'")
-#
-#         if not check_installed:
-#             return rc, out, err
-#
-#         installed = False
-#
-#         if rc == 0:
-#             pattern = re.compile(r"Nextcloud is not installed.*", re.MULTILINE)
-#             # installed_out = re.search(pattern_1, out)
-#             is_installed = re.search(pattern, err)
-#
-#             # self.module.log(msg=f" out: '{installed_out}'")
-#             # self.module.log(msg=f" err: '{is_installed}' {type(is_installed)}")
-#
-#             if is_installed:
-#                 installed = False
-#             else:
-#                 installed = True
-#
-#         else:
-#             err = out.strip()
-#
-#             pattern = re.compile(r"An unhandled exception has been thrown:\n(?P<exception>.*)\n.*", re.MULTILINE)
-#             exception = re.search(pattern, err)
-#
-#             if exception:
-#                 err = exception.group("exception")
-#
-#         # self.module.log(msg=f"{rc} '{installed}' '{out}' '{err}'")
-#
-#         return (rc, installed, out, err)
-#
-#     def occ_create_group(self, name, display_name=None):
-#         """
-#             sudo -u www-data php occ
-#                 group:add
-#                 --no-ansi
-#                 --display-name="foo"
-#                 "foo"
-#         """
-#         self.module.log(msg=f"occ_create_group({name}, {display_name})")
-#         _failed = True
-#         _changed = False
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("group:add")
-#         args.append("--no-ansi")
-#         # args.append("--output")
-#         # args.append("json")
-#
-#         if display_name:
-#             args.append("--display-name")
-#             args.append(display_name)
-#
-#         args.append(name)
-#
-#         self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         # self.module.log(msg=f" rc : '{rc}'")
-#         # self.module.log(msg=f" out: {type(out)} - '{out.strip()}'")
-#         # self.module.log(msg=f" err: {type(err.strip())} - '{err.strip()}'")
-#
-#         if rc == 0:
-#             _msg = "Group was successfully created."
-#             _failed = False
-#             _changed = True
-#         else:
-#             patterns = [
-#                 'Group ".*" already exists.',
-#             ]
-#             error = None
-#
-#             # out = json.loads(out)
-#
-#             for pattern in patterns:
-#                 filter_list = list(filter(lambda x: re.search(pattern, x), out.splitlines()))
-#                 if len(filter_list) > 0 and isinstance(filter_list, list):
-#                     error = (filter_list[0]).strip()
-#                     self.module.log(msg=f"  - {error}")
-#                     break
-#             # self.module.log("--------------------")
-#
-#             if rc == 0 and not error:
-#                 _failed = False
-#                 _changed = False
-#                 _msg = f"Group {name} already created."
-#             else:
-#                 _failed = False
-#                 _changed = False
-#                 _msg = error
-#
-#         return dict(
-#             failed=_failed,
-#             changed=_changed,
-#             msg=_msg
-#         )
-#
-#     def occ_remove_group(self, name):
-#         """
-#             sudo -u www-data php occ
-#                 group:delete
-#                 --no-ansi
-#                 "foo"
-#         """
-#         self.module.log(msg=f"occ_remove_group({name})")
-#         _failed = True
-#         _changed = False
-#
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("group:delete")
-#         args.append("--no-ansi")
-#         args.append(name)
-#
-#         self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         # self.module.log(msg=f" rc : '{rc}'")
-#         # self.module.log(msg=f" out: {type(out)} - '{out.strip()}'")
-#         # self.module.log(msg=f" err: {type(err.strip())} - '{err.strip()}'")
-#
-#         if rc == 0:
-#             _msg = "Group was successfully removed."
-#             _failed = False
-#             _changed = True
-#         else:
-#             patterns = [
-#                 'Group ".*" already exists.',
-#             ]
-#             error = None
-#
-#             # out = json.loads(out)
-#
-#             for pattern in patterns:
-#                 filter_list = list(filter(lambda x: re.search(pattern, x), out.splitlines()))
-#                 if len(filter_list) > 0 and isinstance(filter_list, list):
-#                     error = (filter_list[0]).strip()
-#                     self.module.log(msg=f"  - {error}")
-#                     break
-#             # self.module.log("--------------------")
-#
-#             if rc == 0 and not error:
-#                 _failed = False
-#                 _changed = False
-#                 _msg = f"Group {name} already created."
-#             else:
-#                 _failed = False
-#                 _changed = False
-#                 _msg = error
-#
-#         return dict(
-#             failed=_failed,
-#             changed=_changed,
-#             msg=_msg
-#         )
-#
-#     def occ_list_groups(self):
-#         """
-#         """
-#         args = []
-#         args += self.occ_base_args
-#
-#         args.append("group:list")
-#         args.append("--no-ansi")
-#         args.append("--output")
-#         args.append("json")
-#
-#         self.module.log(msg=f" args: '{args}'")
-#
-#         rc, out, err = self.__exec(args, check_rc=False)
-#
-#         out = json.loads(out)
-#
-#         group_names = [x for x, _ in out.items()]
-#         return group_names
-#
-#     def __file_state(self, file_name):
-#         """
-#         """
-#         current_owner = None
-#         current_group = None
-#         current_mode = None
-#
-#         if os.path.exists(file_name):
-#             _state = os.stat(file_name)
-#             try:
-#                 current_owner = pwd.getpwuid(_state.st_uid).pw_uid
-#             except KeyError:
-#                 pass
-#
-#             try:
-#                 current_group = grp.getgrgid(_state.st_gid).gr_gid
-#             except KeyError:
-#                 pass
-#
-#             try:
-#                 current_mode = oct(_state.st_mode)[-4:]
-#             except KeyError:
-#                 pass
-#
-#         return current_owner, current_group, current_mode
-#
-#     def __exec(self, commands, check_rc=True):
-#         """
-#         """
-#         rc, out, err = self.module.run_command(commands, cwd=self.working_dir, check_rc=check_rc)
-#
-#         # self.module.log(msg=f"  rc : '{rc}'")
-#         if rc != 0:
-#             self.module.log(msg=f"cmd: '{commands}'")
-#             self.module.log(msg=f"  rc : '{rc}'")
-#             self.module.log(msg=f"  out: '{out}'")
-#             self.module.log(msg=f"  err: '{err}'")
-#             for line in err.splitlines():
-#                 self.module.log(msg=f"   {line}")
-#
-#         return rc, out, err
-#
-
-def main():
-    """
-    """
+def main() -> None:
+    """ """
     specs = dict(
-        groups=dict(
-            required=False,
-            type=list,
-            default=[]
-        ),
-        working_dir=dict(
-            required=True,
-            type=str
-        ),
-        owner=dict(
-            required=False,
-            type=str,
-            default="www-data"
-        ),
+        groups=dict(required=False, type=list, default=[]),
+        working_dir=dict(required=True, type=str),
+        owner=dict(required=False, type=str, default="www-data"),
     )
 
     module = AnsibleModule(
@@ -449,40 +231,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-
-"""
-sudo --user www-data php occ group
-
-Did you mean one of these?
-    group:add
-    group:adduser
-    group:delete
-    group:info
-    group:list
-    group:removeuser
-
-sudo --user www-data php occ group:list --output=json
-sudo --user www-data php occ group:add --no-ansi --help
-
-Description:
-  Add a group
-
-Usage:
-  group:add [options] [--] <groupid>
-
-Arguments:
-  groupid                          Group id
-
-Options:
-      --display-name=DISPLAY-NAME  Group name used in the web UI (can contain any characters)
-  -h, --help                       Display help for the given command. When no command is given display help for the list command
-  -q, --quiet                      Do not output any message
-  -V, --version                    Display this application version
-      --ansi|--no-ansi             Force (or disable --no-ansi) ANSI output
-  -n, --no-interaction             Do not ask any interactive question
-      --no-warnings                Skip global warnings, show command output only
-  -v|vv|vvv, --verbose             Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
-"""

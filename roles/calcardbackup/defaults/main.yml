@@ -22,7 +22,7 @@ calcardbackup_config: {}
 
 calcardbackup_cron:
   type: systemd       # alternative supported: cron or systemd
-  daemon: ""          # "{{ 'cron' if ansible_os_family | lower == 'debian' else 'cronie' }}"
+  daemon: ""          # "{{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
   enabled: true       # [true, false]
   cron:
     minute: "58"

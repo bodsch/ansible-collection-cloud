@@ -68,7 +68,7 @@
       ansible.builtin.pip:
         requirements: "{{ pip_requirements.requirements_file }}"
         state: present
-        extra_args: "{{ nextcloud_python_extra_args | default([]) | bodsch.core.python_extra_args(python_version=ansible_python.version) | default(omit) }}"
+        extra_args: "{{ nextcloud_python_extra_args | default([]) | bodsch.core.python_extra_args(python_version=ansible_facts.python.version) | default(omit) }}"
       when:
         - pip_requirements.requirements_file is defined
         - pip_requirements.changed
@@ -112,7 +112,8 @@
     path: "{{ nextcloud_install_base_directory }}/nextcloud/server"
   when:
     - __stat_share_nextcloud.stat is defined
-    - __stat_share_nextcloud.stat.isdir | default('true')
+    - __stat_share_nextcloud.stat.exists | default('false') | bool
+    - __stat_share_nextcloud.stat.isdir | default('true') | bool
 
 - name: install nextcloud
   when:

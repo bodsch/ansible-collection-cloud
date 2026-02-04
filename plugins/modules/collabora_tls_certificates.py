@@ -4,10 +4,11 @@
 # (c) 2022-2024, Bodo Schulz <bodo@boone-schulz.de>
 
 from __future__ import absolute_import, print_function
-import shutil
-import os
+
 import grp
+import os
 import pwd
+import shutil
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.core.plugins.module_utils.checksum import Checksum
@@ -16,13 +17,13 @@ __metaclass__ = type
 
 
 class CollaboraTLSCertificates(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
         self.source = module.params.get("source")
@@ -45,12 +46,11 @@ class CollaboraTLSCertificates(object):
     def get_file_ownership(self, filename):
         return (
             pwd.getpwuid(os.stat(filename).st_uid).pw_name,
-            grp.getgrgid(os.stat(filename).st_gid).gr_name
+            grp.getgrgid(os.stat(filename).st_gid).gr_name,
         )
 
     def run(self):
-        """
-        """
+        """ """
         failed = False
         changed = False
         msg = "module init."
@@ -58,37 +58,28 @@ class CollaboraTLSCertificates(object):
         verify_sources, msg = self.verify_source_files()
 
         if not verify_sources:
-            return dict(
-                changed=False,
-                failed=(not verify_sources),
-                msg=msg
-            )
+            return dict(changed=False, failed=(not verify_sources), msg=msg)
 
         if len(self.destination) == 0:
             return dict(
                 changed=False,
                 failed=True,
-                msg="The destination directory was not properly defined!"
+                msg="The destination directory was not properly defined!",
             )
 
         result = self.create_destination_directory()
 
-        if not result.get('failed', False):
+        if not result.get("failed", False):
             changed, failed = self.copy_files()
             if changed:
                 msg = "The certificate files have been copied successfully."
             else:
                 msg = "The certificate files are up to date."
 
-        return dict(
-            failed=failed,
-            changed=changed,
-            msg=msg
-        )
+        return dict(failed=failed, changed=changed, msg=msg)
 
     def verify_source_files(self):
-        """
-        """
+        """ """
         missing = []
 
         if len(self.ssl_files) < 3:
@@ -100,7 +91,10 @@ class CollaboraTLSCertificates(object):
                 missing.append("ca")
 
         if len(missing) > 0:
-            return False, f"The source files were not specified completely!\nThe following files are missing: {', '.join(missing)}"
+            return (
+                False,
+                f"The source files were not specified completely!\nThe following files are missing: {', '.join(missing)}",
+            )
 
         for f in self.ssl_files:
             if not os.path.exists(f):
@@ -112,13 +106,12 @@ class CollaboraTLSCertificates(object):
         return True, ""
 
     def create_destination_directory(self):
-        """
-        """
+        """ """
         if os.path.isdir(self.destination):
             return dict(
                 failed=False,
                 changed=False,
-                msg=f"Directory {self.destination} already exists."
+                msg=f"Directory {self.destination} already exists.",
             )
 
         # Create the directory
@@ -128,24 +121,15 @@ class CollaboraTLSCertificates(object):
 
             shutil.chown(self.destination, self.owner, self.group)
 
-            return dict(
-                failed=False,
-                changed=True,
-                msg=msg
-            )
+            return dict(failed=False, changed=True, msg=msg)
 
         except OSError as error:
             msg = f"Directory '{self.destination}' can not be created. ({error})"
 
-            return dict(
-                failed=True,
-                changed=False,
-                msg=msg
-            )
+            return dict(failed=True, changed=False, msg=msg)
 
     def copy_files(self):
-        """
-        """
+        """ """
         changed = False
         failed = False
 
@@ -174,8 +158,7 @@ class CollaboraTLSCertificates(object):
         return changed, failed
 
     def verify(self, source_file, destination_file):
-        """
-        """
+        """ """
         # self.module.log(msg=f"verify({source_file} : {destination_file})")
 
         self.checksum = Checksum(self.module)
@@ -207,22 +190,11 @@ def main():
         argument_spec=dict(
             source=dict(
                 required=True,
-                type='dict',
+                type="dict",
             ),
-            destination=dict(
-                required=True,
-                type='path'
-            ),
-            owner=dict(
-                required=False,
-                type='str',
-                default="mysql"
-            ),
-            group=dict(
-                required=False,
-                type='str',
-                default="mysql"
-            ),
+            destination=dict(required=True, type="path"),
+            owner=dict(required=False, type="str", default="mysql"),
+            group=dict(required=False, type="str", default="mysql"),
         ),
         supports_check_mode=False,
     )
@@ -236,5 +208,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

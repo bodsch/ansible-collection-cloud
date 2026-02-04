@@ -1,6 +1,8 @@
 ---
 
 - name: validate user passwords
+  delegate_to: localhost
+  become: false
   run_once: true
   ansible.builtin.set_fact:
     nextcloud_validated_passwords: "{{ nextcloud_users | bodsch.cloud.nc_validate_passwords(nextcloud_password_validation) }}"

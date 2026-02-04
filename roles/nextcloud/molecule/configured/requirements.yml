@@ -1,18 +1,19 @@
 ---
 
-- name: php-fpm
-  src: https://github.com/bodsch/ansible-php
-  scm: git
-  version: 2.3.0
+roles:
+  - name: php-fpm
+    src: https://github.com/bodsch/ansible-php
+    scm: git
+    version: 2.3.0
 
-- name: nginx
-  src: https://github.com/bodsch/ansible-nginx
-  scm: git
-  version: 0.27.2
+  - name: nginx
+    src: https://github.com/bodsch/ansible-nginx
+    scm: git
+    version: 0.30.1
 
-- name: composer
-  src: https://github.com/geerlingguy/ansible-role-composer.git
-  scm: git
-  version: 1.9.2
+  - name: composer
+    src: https://github.com/geerlingguy/ansible-role-composer.git
+    scm: git
+    version: 1.9.2
 
 ...
