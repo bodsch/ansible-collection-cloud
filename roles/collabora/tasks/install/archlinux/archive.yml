@@ -38,7 +38,7 @@
   ansible.builtin.copy:
     src: "{{ collabora_local_tmp_directory }}/{{ collabora_arch.archive | basename }}"
     dest: "/tmp/{{ collabora_arch.archive | basename }}"
-    mode: 0755
+    mode: "0755"
     remote_src: "{{ 'true' if collabora_direct_download else 'false' }}"
 
 - name: install collabora packages

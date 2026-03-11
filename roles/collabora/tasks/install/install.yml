@@ -43,34 +43,15 @@
     facts:
       version: "{{ _version.version }}"
 
-- name: define collabora user
+- name: find account defaults
+  bodsch.core.account_defaults:
+    default_user: "{{ collabora_user_default }}"
+  register: _default_user
+
+- name: define collabora user and group
   ansible.builtin.set_fact:
-    collabora_owner: "{{ collabora_user_default }}"
-  when:
-    - not collabora_owner is defined or collabora_owner | length == 0
-
-- name: re-define primary group
-  when:
-    - not collabora_group is defined or collabora_group | length == 0
-  block:
-    - name: "find primary group for user '{{ collabora_owner }}'"
-      ansible.builtin.getent:
-        database: group
-        key: "{{ collabora_owner }}"
-        split: ':'
-
-    - name: "set collabora_group '{{ getent_group | list | first }}'"
-      ansible.builtin.set_fact:
-        collabora_group: "{{ getent_group | list | first }}"
-      when:
-        - getent_group is defined
-
-- name: assert collabora group
-  ansible.builtin.assert:
-    that:
-      - collabora_group is defined or collabora_group | length == 0
-    msg: no collabora group detected
-    quiet: true
+    collabora_owner: "{{ _default_user.user }}"
+    collabora_group: "{{ _default_user.group }}"
 
 - name: merge collabora service configuration between defaults and custom
   ansible.builtin.set_fact:
@@ -86,7 +67,7 @@
         dest: "{{ collabora_defaults_directory }}/coolwsd"
         force: true
         owner: root
-        mode: 0640
+        mode: "0640"
       notify:
         - restart service
 
@@ -96,7 +77,7 @@
         dest: "{{ systemd_lib_directory }}/coolwsd.service"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
       notify:
         - daemon-reload
         - restart service
@@ -111,7 +92,7 @@
         dest: "/etc/conf.d/coolwsd"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
 
     - name: create openrc init configuration
       ansible.builtin.template:
