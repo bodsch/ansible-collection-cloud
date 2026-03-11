@@ -6,6 +6,6 @@
 
   roles:
     # - role: nginx
-    # - role: php-fpm
+    # - role: bodsch.php.fpm
     # - role: composer
     - role: bodsch.cloud.nextcloud
