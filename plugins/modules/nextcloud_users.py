@@ -272,7 +272,7 @@ class NextcloudUsers(NextcloudIdentity):
         if not installed and rc == 1:
             return dict(failed=False, changed=False, msg=out)
 
-        (self.existing_users, self.existing_groups) = self.identities()
+        self.existing_users, self.existing_groups = self.identities()
 
         result_state: List[Dict[str, Any]] = []
 

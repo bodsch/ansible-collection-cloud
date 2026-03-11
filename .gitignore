@@ -5,3 +5,6 @@ __pycache__
 .cache
 .directory
 hooks
+*.save
+*.SAVE
+*.DIST

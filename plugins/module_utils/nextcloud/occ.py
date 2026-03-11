@@ -66,7 +66,7 @@ class AnsibleModuleLike(Protocol):
 
 
 _UNHANDLED_EXCEPTION_RE = re.compile(
-    r"An unhandled exception has been thrown:\n(?P<exception>.*)\n.*",
+    r"(?P<message>[\s\S]*?)An unhandled exception has been thrown:\n(?P<exception>[^\n]+)",
     re.MULTILINE,
 )
 _UPGRADE_REQUIRED_RE = re.compile(
@@ -123,6 +123,13 @@ class Occ:
         self.working_dir = working_dir
         self._occ = os.path.join(self.working_dir, "occ")
 
+        _php = "php"
+        _php_legacy_binary = self.module.get_bin_path("php-legacy", False)
+        # _php_binary = self.module.get_bin_path("php", False)
+
+        if _php_legacy_binary:
+            _php = "php-legacy"
+
         # Base command used for all `occ` invocations.
         #
         # `--preserve-env=OC_PASS` is needed when `occ` relies on `--password-from-env`.
@@ -132,7 +139,7 @@ class Occ:
             "--preserve-env=OC_PASS",
             "--user",
             self.owner,
-            "php",
+            _php,
             "occ",
         ]
 
@@ -144,7 +151,19 @@ class Occ:
         If the pattern does not match, the original text is returned unchanged.
         """
         match = re.search(_UNHANDLED_EXCEPTION_RE, text)
-        return match.group("exception") if match else text
+
+        message = None
+        exception = None
+        if match:
+            message = match.group("message")
+            exception = match.group("exception")
+
+        if message:
+            return message
+        if exception:
+            return exception
+
+        return text
 
     @staticmethod
     def _redact_env(
@@ -192,7 +211,7 @@ class Occ:
             This method does not raise exceptions for missing paths; it returns
             an error flag and an Ansible-compatible message payload.
         """
-        self.module.log("Occ::self_check()")
+        # self.module.log("Occ::self_check()")
 
         error = False
         msg: Dict[str, Any] = {}
@@ -233,7 +252,7 @@ class Occ:
             - If rc != 0, tries to extract the exception line from the typical
               "An unhandled exception has been thrown" output.
         """
-        self.module.log("Occ::status()")
+        # self.module.log("Occ::status()")
 
         installed = False
         version_string: Optional[str] = None
@@ -281,25 +300,25 @@ class Occ:
             In case of exceptions, tries to extract a single-line exception message
             from typical Nextcloud output.
         """
-        self.module.log("Occ::upgrade()")
+        # self.module.log("Occ::upgrade()")
 
         args = self._build_args("upgrade", "--no-ansi")
 
-        self.module.log(msg=f" args: '{args}'")
+        # self.module.log(msg=f" args: '{args}'")
 
         rc, out, err = self._exec(args, check_rc=False)
 
-        self.module.log(msg=f" rc : '{rc}'")
-        self.module.log(msg=f" out: '{out.strip()}'")
-        self.module.log(msg=f" err: '{err.strip()}'")
+        # self.module.log(msg=f" rc : '{rc}'")
+        # self.module.log(msg=f" out: '{out.strip()}'")
+        # self.module.log(msg=f" err: '{err.strip()}'")
 
         if rc == 0:
-            self.module.log(msg="okay?")
+            # self.module.log(msg="okay?")
             err = "The upgrade was successful."
         else:
             err = self._extract_unhandled_exception(out.strip() or err.strip())
 
-        self.module.log(msg=f"= rc: {rc}, out: {out.strip()}, err: {err.strip()}")
+        # self.module.log(msg=f"= rc: {rc}, out: {out.strip()}, err: {err.strip()}")
         return (rc, out, err)
 
     @overload
@@ -341,13 +360,15 @@ class Occ:
             The correctness of `installed` detection depends on Nextcloud's output
             format and may need adjustments across versions.
         """
-        self.module.log(f"Occ::check(check_installed: {check_installed})")
+        # self.module.log(f"Occ::check(check_installed: {check_installed})")
 
         args = self._build_args("check", "--no-ansi", "--output", "json")
         rc, out, err = self._exec(args, check_rc=False)
 
         if not check_installed:
-            self.module.log(msg=f"= rc: {rc}, out: {out.strip()}, err: {err.strip()}")
+            # self.module.log(f"  - rc: {rc}")
+            # self.module.log(f"  - out: {out.strip()}")
+            # self.module.log(f"  - err: {err.strip()}")
 
             if rc == 0:
                 need_upgrade = re.search(_UPGRADE_REQUIRED_RE, err) or re.search(
@@ -379,9 +400,14 @@ class Occ:
         else:
             err = self._extract_unhandled_exception(out.strip() or err.strip())
 
-        self.module.log(
-            msg=f"= rc: {rc}, installed: {installed}, out: {out.strip()}, err: {err.strip()}"
-        )
+        # self.module.log(f"  - rc: {rc}")
+        # self.module.log(f"  - out: {out.strip()}")
+        # self.module.log(f"  - err: {err.strip()}")
+        # self.module.log(f"  - installed: {installed}")
+
+        # self.module.log(
+        #     msg=f"= rc: {rc}, installed: {installed}, out: {out.strip()}, err: {err.strip()}"
+        # )
 
         return (rc, installed, out, err)
 
@@ -432,7 +458,7 @@ class Occ:
         Notes:
             On failure, tries to match common error patterns to provide a concise message.
         """
-        self.module.log(f"Occ::maintenance_install({config})")
+        # self.module.log(f"Occ::maintenance_install({config})")
 
         _failed = True
         _changed = False
@@ -526,13 +552,13 @@ class Occ:
             _output += out.splitlines()
             _output += err.splitlines()
 
-            self.module.log(f" - {_output}")
+            # self.module.log(f" - {_output}")
 
             for pattern in patterns:
                 filter_list = list(filter(lambda x: re.search(pattern, x), _output))
                 if len(filter_list) > 0 and isinstance(filter_list, list):
                     error = (filter_list[0]).strip()
-                    self.module.log(msg=f"  - {error}")
+                    # self.module.log(msg=f"  - {error}")
                     break
 
             _, installed, version, _, status_err = self.status()
@@ -569,7 +595,7 @@ class Occ:
                 - failed (bool): True if the command return code is non-zero
                 - msg (str): Stdout content (trimmed)
         """
-        self.module.log(f"Occ::background_job({crontype})")
+        # self.module.log(f"Occ::background_job({crontype})")
 
         args = self._build_args(f"background:{crontype}", "--no-ansi")
         rc, out, err = self._exec(args, check_rc=False)
@@ -597,7 +623,7 @@ class Occ:
         Notes:
             The function currently always calls `config:list system` regardless of `type`.
         """
-        self.module.log(f"Occ::config_list({type})")
+        # self.module.log(f"Occ::config_list({type})")
 
         args: List[str] = []
         args += self.occ_base_args
@@ -643,9 +669,9 @@ class Occ:
             Avoid logging secrets in `environ_update`. If you need debug logging, consider
             redacting sensitive keys before writing to module logs.
         """
-        self.module.log(
-            msg=f"Occ::_exec(args: {args}, environ_update: {self._redact_env(environ_update)}, check_rc: {check_rc})"
-        )
+        # self.module.log(
+        #     msg=f"Occ::_exec(args: {args}, environ_update: {self._redact_env(environ_update)}, check_rc: {check_rc})"
+        # )
 
         rc, out, err = self.module.run_command(
             args, cwd=self.working_dir, environ_update=environ_update, check_rc=check_rc

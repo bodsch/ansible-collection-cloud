@@ -160,7 +160,7 @@ class NextcloudConfig(Occ):
         Command executed:
             occ config:import <config_file> --no-ansi
         """
-        self.module.log(f"NextcloudConfig::import_file({config_file})")
+        # self.module.log(f"NextcloudConfig::import_file({config_file})")
 
         args = []
         args += self.occ_base_args
@@ -186,7 +186,7 @@ class NextcloudConfig(Occ):
         Current behavior:
             No-op (method only logs and returns `None`).
         """
-        self.module.log("NextcloudConfig::config_list()")
+        # self.module.log("NextcloudConfig::config_list()")
 
         pass
 
@@ -223,7 +223,7 @@ class NextcloudConfig(Occ):
                 * restores the backup if validation fails
             - Fixes ownership/mode of `config.php` and removes the temp directory.
         """
-        self.module.log(f"NextcloudConfig::check_config({params})")
+        # self.module.log(f"NextcloudConfig::check_config({params})")
 
         self.owner = params.get("owner")
         self.group = params.get("group")
@@ -342,7 +342,7 @@ class NextcloudConfig(Occ):
             - Some nested structures are normalized (e.g. lists to comma-separated strings).
             - A number of sections are optional and only included when values validate/present.
         """
-        self.module.log("NextcloudConfig::config_opts()")
+        # self.module.log("NextcloudConfig::config_opts()")
 
         data = dict(system=dict())
 
@@ -964,7 +964,7 @@ class NextcloudConfig(Occ):
         Notes:
             - If `config_file` does not exist, the old state is treated as empty.
         """
-        self.module.log(f"NextcloudConfig::create_diff({config_file}, {data})")
+        # self.module.log(f"NextcloudConfig::create_diff({config_file}, {data})")
 
         old_data = dict()
 
@@ -995,7 +995,7 @@ class NextcloudConfig(Occ):
             This helper is currently unused by the public API.
         """
 
-        self.module.log(f"NextcloudConfig::__values_as_string({values})")
+        # self.module.log(f"NextcloudConfig::__values_as_string({values})")
 
         result = {}
         # self.module.log(msg=f"{json.dumps(values, indent=2, sort_keys=False)}")
@@ -1022,7 +1022,7 @@ class NextcloudConfig(Occ):
             Creates/overwrites `file_name` with pretty-printed JSON followed by a newline.
         """
 
-        self.module.log(f"NextcloudConfig::__write_config({file_name}, {data})")
+        # self.module.log(f"NextcloudConfig::__write_config({file_name}, {data})")
 
         with open(file_name, "w") as fp:
             json_data = json.dumps(data, indent=2, sort_keys=False)
@@ -1044,7 +1044,7 @@ class NextcloudConfig(Occ):
         Notes:
             If the file does not exist, all return values are None.
         """
-        self.module.log(f"NextcloudConfig::__file_state({file_name})")
+        # self.module.log(f"NextcloudConfig::__file_state({file_name})")
 
         current_owner = None
         current_group = None
@@ -1091,9 +1091,9 @@ class NextcloudConfig(Occ):
             - This method performs `os.chmod()` and `os.chown()` when differences are detected.
             - Owner/group names are resolved via `pwd.getpwnam` and `grp.getgrnam`.
         """
-        self.module.log(
-            f"NextcloudConfig::__fix_ownership({file_name}, {force_owner}, {force_group}, {force_mode} )"
-        )
+        # self.module.log(
+        #     f"NextcloudConfig::__fix_ownership({file_name}, {force_owner}, {force_group}, {force_mode} )"
+        # )
 
         changed = False
         error_msg = None
