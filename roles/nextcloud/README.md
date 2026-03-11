@@ -18,6 +18,17 @@ or
 ansible-galaxy collection install --requirements-file collections.yml
 ```
 
+### Required PHP modules for Nextcloud
+
+| Category | Modules |
+| :-----   | :-----  |
+| Absolutely necessary | ctype, curl, dom, fileinfo, filter, GD, hash, JSON, libxml, mbstring, openssl, posix, session, SimpleXML, XMLReader, XMLWriter, zip, zlib | 
+| Database connection (select one) | pdo_sqlite, pdo_mysql, pdo_pgsql | 
+| Recommended | intl, sodium | 
+| For specific apps | ldap, smbclient, ftp, imap, bcmath, gmp | 
+| Performance (Cache) | apcu (≥ 4.0.6), memcached, redis (≥ 2.2.6) | 
+
+
 ## usage
 
 ```yaml
@@ -55,6 +66,27 @@ nextcloud_password_salt: ""
 nextcloud_data_directory: ""
 
 nextcloud_trusted_domains: []
+
+nextcloud_php_dependencies:
+  core:
+    - ctype
+    - curl
+    - dom
+    - fileinfo
+    - filter
+    - gd
+    - hash
+    - json
+    - libxml
+    - mbstring
+    - openssl
+    - posix
+    - session
+    - simplexml
+    - xmlreader
+    - xmlwriter
+    - zip
+    - zlib
 
 nextcloud_database:
   type: sqlite

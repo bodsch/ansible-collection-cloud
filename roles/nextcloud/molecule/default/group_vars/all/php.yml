@@ -36,6 +36,13 @@ php_fpm_pools:
       date.timezone: "Europe/Berlin"
       max_execution_time: 300
 
+php_packages:
+  - php-curl
+  - php-gd
+  - php-mbstring
+  - php-zip
+  - php-sqlite3
+
 php_modules:
   - name: opcache
     enabled: true

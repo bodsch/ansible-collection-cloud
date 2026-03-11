@@ -1,0 +1,53 @@
+---
+
+- name: detect available php version
+  bodsch.cloud.nextcloud_php_version:
+    package_name: "{{ php_package_name | default('php-fpm') }}"
+    package_version: "{{ php_version }}"
+  register: detected_php_version
+
+- name: validate php module dependencies
+  bodsch.cloud.nextcloud_php_dependencies:
+    package_name: "{{ php_package_name | default('php-fpm') }}"
+    php_dependencies: "{{ nextcloud_php_dependencies.core | default([]) }}"
+  register: detected_php_modules
+
+- name: "set php_version '{{ detected_php_version.version.short_version }}'"
+  ansible.builtin.set_fact:
+    php_version: "{{ detected_php_version.version.short_version }}"
+    php_full_version: "{{ detected_php_version.version.full_version }}"
+    php_major_version: "{{ detected_php_version.version.major_version }}"
+  when:
+    - not detected_php_version.failed
+    - detected_php_version.version.full_version is defined
+    - detected_php_version.version.major_version is defined
+
+- name: "unset php_major_version for PHP 8"
+  ansible.builtin.set_fact:
+    php_major_version: ""
+  when:
+    - ansible_facts.distribution | lower == 'archlinux' or
+      ansible_facts.distribution | lower | replace(' ', '') == 'artixlinux'
+    - php_major_version | int == 8
+
+- name: re-include OS specific configuration
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      paths:
+        - "vars"
+      files:
+        # eg. debian-10 / ubuntu-20.04 / centos-8 / oraclelinux-8
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.distribution_major_version }}.yml"
+        # eg. archlinux-systemd / archlinux-openrc
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.service_mgr | lower }}.yml"
+        # eg. artixlinux
+        - "{{ ansible_facts.distribution | lower | replace(' ', '') }}.yml"
+        # eg. debian / ubuntu / centos / oraclelinux
+        - "{{ ansible_facts.distribution | lower }}.yml"
+        # eg. redhat / debian / archlinux
+        - "{{ ansible_facts.os_family | lower }}.yml"
+        - default.yml
+      skip: true
+
+...

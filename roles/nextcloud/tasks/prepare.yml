@@ -1,30 +1,9 @@
 ---
 
-- name: get latest system information
-  ansible.builtin.setup:
-
-- name: get version of installed php
-  bodsch.core.package_version:
-    package_name: "php"
-    state: installed
-  register: package_version
-
-- name: define php version
-  ansible.builtin.set_fact:
-    php_version: "{{ package_version.available.full_version }}"
-    php_major_version: "{{ package_version.available.major_version }}"
-    php_package_version: "{{ package_version.available.version_string_compressed }}"
-  when:
-    - package_version is defined
-    - package_version.available is defined
-    - package_version.available.full_version is defined
-    - package_version.available.major_version is defined
-    - package_version.available.version_string_compressed is defined
-
 - name: check PHP compatibility for Nextcloud {{ nextcloud_version }}
   bodsch.cloud.nextcloud_validate_php:
     nextcloud_version: "{{ nextcloud_version }}"
-    php_version: "{{ php_version }}"
+    php_version: "{{ php_full_version }}"
     from_git: true
   register: supported_php_version
 
@@ -67,34 +46,15 @@
         - default.yaml
       skip: true
 
-- name: define nextcloud user
+- name: find account defaults
+  bodsch.core.account_defaults:
+    default_user: "{{ nextcloud_owner_default }}"
+  register: _default_user
+
+- name: define nextcloud user and group
   ansible.builtin.set_fact:
-    nextcloud_owner: "{{ nextcloud_owner_default }}"
-  when:
-    - not nextcloud_owner is defined or nextcloud_owner | length == 0
-
-- name: re-define primary group
-  when:
-    - not nextcloud_group is defined or nextcloud_group | length == 0
-  block:
-    - name: "find primary group for user '{{ nextcloud_owner }}'"
-      ansible.builtin.getent:
-        database: group
-        key: "{{ nextcloud_owner }}"
-        split: ':'
-
-    - name: define nextcloud group
-      ansible.builtin.set_fact:
-        _nextcloud_group: "{{ ansible_facts['getent_group'] | list | first }}"
-      when:
-        - ansible_facts['getent_group'] is defined
-        - ansible_facts['getent_group'] | default([]) | count > 0
-
-    - name: "set nextcloud_group '{{ _nextcloud_group }}'"
-      ansible.builtin.set_fact:
-        nextcloud_group: "{{ _nextcloud_group }}"
-      when:
-        - _nextcloud_group is defined
+    nextcloud_owner: "{{ _default_user.user }}"
+    nextcloud_group: "{{ _default_user.group }}"
 
 - name: assert nextcloud group
   ansible.builtin.assert:
@@ -102,5 +62,39 @@
       - nextcloud_group is defined or nextcloud_group | length == 0
     msg: no nextcloud group detected
     quiet: true
+
+# -- verify PHP dependencies --
+
+- name: merge nextcloud configuration between defaults and custom
+  ansible.builtin.set_fact:
+    nextcloud_database: "{{ nextcloud_defaults_database | combine(nextcloud_database, recursive=True) }}"
+
+- name: define core php dependencies
+  ansible.builtin.set_fact:
+    nextcloud_php_dependencies: "{{ nextcloud_php_dependencies.core | default([]) }}"
+
+- name: append database package
+  ansible.builtin.set_fact:
+    nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_database | default({}) | bodsch.cloud.nc_database_driver(nextcloud_php_packages) }}"
+
+- name: append php redis packages while redis host are defined
+  ansible.builtin.set_fact:
+    nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_php_packages.redis }}"
+  register: package_version
+  when:
+    - nextcloud_defaults.redis | default([]) | bodsch.cloud.nc_configured_cache('redis') | count > 0
+
+- name: append php memcache packages while memcache host are defined
+  ansible.builtin.set_fact:
+    nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_php_packages.memcache }}"
+  register: package_version
+  when:
+    - nextcloud_defaults.memcache | default({}) | bodsch.cloud.nc_configured_cache('memcache') | count > 0
+
+- name: validate php module dependencies
+  bodsch.cloud.nextcloud_php_dependencies:
+    package_name: "{{ php_package_name | default('php-fpm') }}"
+    php_dependencies: "{{ nextcloud_php_dependencies | default([]) | bodsch.cloud.nc_php_module_name() }}"
+  register: detected_php_modules
 
 ...

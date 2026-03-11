@@ -1,6 +1,13 @@
 ---
 
-php_version: "8" # .3"
+php_version: "8"
+
+php_package_name: "{{ 'php-legacy' if ansible_facts.os_family | lower == 'archlinux' else 'php' }}"
+
+php_packages:
+  - "{{ php_package_name | default('php') }}{{ php_major_version }}-imagick"
+  - "{{ php_package_name | default('php') }}{{ php_major_version }}-gd"
+  - "{{ php_package_name | default('php') }}-sqlite"
 
 php_enable_php_fpm: true
 
@@ -56,15 +63,15 @@ php_modules:
     enabled: true
     priority: 20
     content: |
-      extension=pdo_mysql.so
+      extension=pdo_mysql
       pdo_mysql.cache_size = 2000
   - name: pdo_sqlite
     enabled: false
     priority: 20
     content: |
-      extension=pdo_sqlite.so
+      extension=pdo_sqlite
   - name: sqlite3
-    enabled: false
+    enabled: true
     priority: 20
     content: |
       extension=sqlite3
@@ -72,7 +79,7 @@ php_modules:
     enabled: true
     priority: 20
     content: |
-      extension=gd.so
+      extension=gd
       gd.jpeg_ignore_warning = 1
   - name: intl
     enabled: true

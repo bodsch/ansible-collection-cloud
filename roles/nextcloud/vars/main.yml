@@ -20,24 +20,31 @@ nextcloud_dependencies:
   - bzip2
   - python3-pip
   - sudo
-  - php{{ php_version }}-xmlrpc
-  - php{{ php_version }}-ldap
-  - php{{ php_version }}-curl
-  - php{{ php_version }}-mbstring
-  - php{{ php_version }}-zip
-  - php{{ php_version }}-intl
-  - php{{ php_version }}-gd
 
 nextcloud_php_packages:
+  default: []
+    # - php{{ php_version }}-xmlrpc
+    # - php{{ php_version }}-ldap
+    # - php{{ php_version }}-curl
+    # - php{{ php_version }}-mbstring
+    # - php{{ php_version }}-zip
+    # - php{{ php_version }}-intl
+    # - php{{ php_version }}-gd
+    # - php{{ php_version }}-apcu
   redis:
-    - php{{ php_version }}-redis
+    # - php{{ php_version }}-redis
+    - redis
   memcache:
-    - php{{ php_version }}-memcached
-    - php{{ php_version }}-msgpack
+    # - php{{ php_version }}-memcached
+    # - php{{ php_version }}-msgpack
+    - memcached
+    - msgpack
   sqlite:
-    - php{{ php_version }}-sqlite3
+    # - php{{ php_version }}-sqlite3
+    - sqlite3
   mysql:
-    - php{{ php_version }}-mysql
+    # - php{{ php_version }}-mysql
+    - mysql
 
 nextcloud_python_packages:
   # - name: mysqlclient

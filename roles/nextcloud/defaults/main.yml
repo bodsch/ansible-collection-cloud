@@ -1,6 +1,6 @@
 ---
 
-nextcloud_version: 32.0.3
+nextcloud_version: 33.0.0
 
 # switch between
 # releases      : https://download.nextcloud.com/server/releases/nextcloud-28.0.1.zip
@@ -35,6 +35,27 @@ nextcloud_password_salt: ""
 nextcloud_data_directory: ""
 
 nextcloud_trusted_domains: []
+
+nextcloud_php_dependencies:
+  core:
+    - ctype
+    - curl
+    - dom
+    - fileinfo
+    - filter
+    - gd
+    - hash
+    - json
+    - libxml
+    - mbstring
+    - openssl
+    - posix
+    - session
+    - simplexml
+    - xmlreader
+    - xmlwriter
+    - zip
+    - zlib
 
 nextcloud_database:
   type: sqlite
