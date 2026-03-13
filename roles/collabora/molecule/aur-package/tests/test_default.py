@@ -70,7 +70,7 @@ def test_open_port(host, get_vars):
     for i in host.socket.get_listening_sockets():
         print(i)
 
-    pp_json(get_vars)
+    print(get_vars)
 
     service = host.socket("tcp://127.0.0.1:9980")
     assert service.is_listening
