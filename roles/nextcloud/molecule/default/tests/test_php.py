@@ -14,7 +14,9 @@ def test_service(host):
     """
     is service running and enabled
     """
-    service = host.service(local_facts(host).get("daemon"))
+    _facts = local_facts(host=host, fact="php_fpm")
+
+    service = host.service(_facts.get("daemon"))
 
     assert service.is_enabled
     assert service.is_running
@@ -27,10 +29,13 @@ def test_fpm_pools(host, get_vars):
     for i in host.socket.get_listening_sockets():
         print(i)
 
+    _facts = local_facts(host=host, fact="php_fpm")
+    print(_facts)
+
     distribution = host.system_info.distribution
     release = host.system_info.release
 
-    socket_name = "/run/php/worker-01.sock"
+    socket_name = f"{_facts.get('socket_directory')}/worker-01.sock"
 
     f = host.file(socket_name)
     assert f.exists

@@ -36,12 +36,20 @@ php_fpm_pools:
       date.timezone: "Europe/Berlin"
       max_execution_time: 300
 
-php_packages:
+_debian_defaults: &DEBIAN_DEFAULTS
   - php-curl
-  - php-gd
-  - php-mbstring
   - php-zip
   - php-sqlite3
+  - php-mbstring
+  - php-gd
+
+_arch_defaults: &ARCH_DEFAULTS
+  # - php-zip
+  - php-sqlite
+  # - php-mbstring
+  - php-gd
+
+php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
 
 php_modules:
   - name: opcache

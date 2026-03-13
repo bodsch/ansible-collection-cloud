@@ -228,7 +228,12 @@ class NextcloudPHPDependencies:
             )
             return [], True
 
-        rc, out, err = self._exec([php_binary, "-m"], check_rc=False)
+        args = [
+            php_binary,
+            "-m"
+        ]
+
+        rc, out, err = self._exec(args, check_rc=False)
         if rc != 0:
             stderr = err.strip() or "Unknown error"
             self._last_error = f"Unable to execute '{php_binary} -m': {stderr}"
@@ -260,6 +265,9 @@ class NextcloudPHPDependencies:
             for dependency in self.php_dependencies
             if dependency.lower() not in normalized_modules
         ]
+
+        # self.module.log(f"  - {available_modules}")
+        # self.module.log(f"  - {missing_modules}")
 
         return available_modules, missing_modules
 

@@ -6,10 +6,8 @@ nextcloud_owner_default: http
 
 nextcloud_dependencies:
   - python-pip
-  # - php-intl
-  # - php-gd
 
-php_fpm_daemon: "{{ php_package_name | default('php') }}-fpm{{ php_major_version }}"
+php_fpm_daemon: "{{ php_package_name | default('php-fpm') }}{{ php_major_version }}"
 
 nextcloud_php_packages:
   default: []
@@ -23,11 +21,11 @@ nextcloud_php_packages:
     # - "{{ php_package_name | default('php') }}{{ php_major_version }}-gd"
     # - "{{ php_package_name | default('php') }}{{ php_major_version }}-apcu"
   redis:
-    - "{{ php_package_name | default('php') }}-redis"
+    - "redis"
   memcache:
-    - "{{ php_package_name | default('php') }}-memcached"
+    - "memcached"
   sqlite:
-    - "{{ php_package_name | default('php') }}-sqlite"
+    - "sqlite3"
   #mysql:
   #  - php{{ php_version }}-mysql
 ...

@@ -2,7 +2,7 @@
 
 php_version: "8"
 
-php_package_name: "{{ 'php-legacy' if ansible_facts.os_family | lower == 'archlinux' else 'php' }}"
+php_package_name: "{{ 'php-legacy-fpm' if ansible_facts.os_family | lower == 'archlinux' else 'php-fpm' }}"
 
 php_packages:
   - "{{ php_package_name | default('php') }}{{ php_major_version }}-imagick"
