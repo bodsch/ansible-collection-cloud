@@ -219,10 +219,13 @@ class NextcloudUsers(NextcloudIdentity):
         """
         if "failed" not in res:
             res["failed"] = False
+
         if "changed" not in res:
             res["changed"] = False
+
         if "msg" not in res:
             res["msg"] = ""
+
         # Normalize types defensively
         res["failed"] = bool(res.get("failed", False))
         res["changed"] = bool(res.get("changed", False))
@@ -301,6 +304,7 @@ class NextcloudUsers(NextcloudIdentity):
                             )
                         else:
                             res[user_name] = dict(
+                                failed=False,
                                 changed=False,
                                 msg="The user has already been created.",
                             )
@@ -330,10 +334,12 @@ class NextcloudUsers(NextcloudIdentity):
                             username=user_name, user_settings=user_settings
                         )
                     )
+
                     if _settings_msg:
                         # Keep it readable; separate from previous message if needed.
                         sep = " " if res[user_name].get("msg") else ""
                         self._append_msg(res[user_name], f"{sep}{_settings_msg}")
+
                     self._merge_flags(
                         res[user_name],
                         failed=_settings_failed,

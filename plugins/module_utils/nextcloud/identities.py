@@ -137,9 +137,14 @@ class NextcloudIdentity(Occ):
         """
         if value is None:
             return ""
+
         if isinstance(value, bool):
             # Keep boolean normalization conservative; Nextcloud may store as 'true/false' or '1/0'.
             return "true" if value else "false"
+
+        if isinstance(value, str):
+            value = value.lower()
+
         return str(value).strip()
 
     @staticmethod
@@ -164,6 +169,8 @@ class NextcloudIdentity(Occ):
 
         If unsupported, this returns None and callers should fall back to "set".
         """
+        # self.module.log(f"NextcloudIdentity::__get_user_setting_value(username: {username}, app: {app}, key: {key})")
+
         args = self._build_args(
             "user:setting",
             "--no-ansi",
@@ -196,6 +203,7 @@ class NextcloudIdentity(Occ):
                     return str(parsed[app][key]).strip()
                 if key in parsed:
                     return str(parsed[key]).strip()
+
         except Exception:
             pass
 
@@ -516,10 +524,14 @@ class NextcloudIdentity(Occ):
                     # Best-effort idempotence: read current value if supported.
                     current = self.__get_user_setting_value(username, app, key)
                     desired = self._normalize_value_for_compare(value)
-                    if (
-                        current is not None
-                        and self._normalize_value_for_compare(current) == desired
-                    ):
+
+                    if current is not None:
+                        current = self._normalize_value_for_compare(current)
+
+                    # self.module.log(f"      current: {current} - type: {type(current)}")
+                    # self.module.log(f"      desired: {desired} - type: {type(desired)}")
+
+                    if current == desired:
                         result[app][key] = True
                         skipped_count += 1
                         continue
