@@ -59,7 +59,6 @@ from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import 
 
 class AnsibleModuleLike(Protocol):
     """ """
-
     @overload
     def run_command(
         self,
