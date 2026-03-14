@@ -23,7 +23,7 @@ nextcloud_php_packages:
   redis:
     - "redis"
   memcache:
-    - "memcached"
+    - "memcache"
   sqlite:
     - "sqlite3"
   #mysql:

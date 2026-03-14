@@ -49,7 +49,7 @@ import os
 import pwd
 import shutil
 import stat
-from typing import Any, Optional, Protocol, Tuple, Union
+from typing import Any, Optional, Protocol, Tuple, Union, overload
 
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import Occ
 from ansible_collections.bodsch.core.plugins.module_utils.checksum import Checksum
@@ -58,11 +58,15 @@ from ansible_collections.bodsch.core.plugins.module_utils.validate import valida
 
 
 class AnsibleModuleLike(Protocol):
-    def log(self, msg: str = "", **kwargs: Any) -> None:
-        ...
+    """ """
 
+    @overload
+    def log(self, msg: str = "", **kwargs: Any) -> None:
+        pass
+
+    @overload
     def user_and_group(self, path: str) -> Tuple[int, int]:
-        ...
+        pass
 
 
 OwnerType = Union[str, int]

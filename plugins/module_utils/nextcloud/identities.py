@@ -41,12 +41,25 @@ from __future__ import absolute_import, print_function
 
 import json
 import re
-from typing import Any, Dict, List, Mapping, Optional, Protocol, Sequence, Tuple
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    overload,
+)
 
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import Occ
 
 
 class AnsibleModuleLike(Protocol):
+    """ """
+
+    @overload
     def run_command(
         self,
         args: Sequence[str],
@@ -54,10 +67,11 @@ class AnsibleModuleLike(Protocol):
         environ_update: Optional[Mapping[str, str]] = None,
         check_rc: bool = True,
     ) -> Tuple[int, str, str]:
-        ...
+        pass
 
+    @overload
     def log(self, msg: str = "", **kwargs: Any) -> None:
-        ...
+        pass
 
 
 class NextcloudIdentity(Occ):

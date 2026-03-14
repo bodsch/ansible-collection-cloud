@@ -1,0 +1,42 @@
+---
+
+# mariadb_use_external_repo: true
+# mariadb_version: 10.4
+
+mariadb_system_users:
+  - username: root
+    password: ""
+    home: /root
+    update: true
+    ignore: true
+
+mariadb_databases:
+  - name: molecule
+    collation: utf8mb4_bin
+    encoding: utf8mb4
+  - name: test
+    state: absent
+    collation: utf8mb4_bin
+    encoding: utf8mb4
+
+mariadb_users:
+  - name: molecule
+    host: '%'
+    password: molecule
+    priv: "molecule.*:ALL"
+    encrypted: false
+  - name: test
+    state: absent
+    host: '%'
+    password: test
+    priv: "test.*:ALL"
+    encrypted: false
+
+mariadb_config_mysqld:
+  bind_address: "{{ ansible_facts.default_ipv4.address | default('127.0.0.1') }}"
+  socket: "{{ mariadb_socket }}"
+  skip_external_locking:
+  skip_name_resolve: 1
+  performance_schema: 1
+  expire_logs_days: 2
+  max_connections: 20

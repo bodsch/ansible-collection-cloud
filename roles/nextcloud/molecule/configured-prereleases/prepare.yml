@@ -50,7 +50,7 @@
   gather_facts: true
 
   roles:
-    - role: bodsch.core.snakeoil
+    - role: bodsch.certs.snakeoil
     - role: bodsch.nginx
     - role: bodsch.php.fpm
     # - role: composer

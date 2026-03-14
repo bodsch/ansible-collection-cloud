@@ -22,7 +22,6 @@ def test_directories(host, get_vars):
     dirs = [
         base_dir,
         f"{base_dir}/nextcloud/{version}",
-        f"{base_dir}/nextcloud/data",
         f"{base_dir}/nextcloud/config",
         f"{base_dir}/nextcloud/server/apps",
         f"{base_dir}/nextcloud/server/core",

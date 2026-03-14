@@ -228,10 +228,7 @@ class NextcloudPHPDependencies:
             )
             return [], True
 
-        args = [
-            php_binary,
-            "-m"
-        ]
+        args = [php_binary, "-m"]
 
         rc, out, err = self._exec(args, check_rc=False)
         if rc != 0:

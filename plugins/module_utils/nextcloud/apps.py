@@ -51,6 +51,7 @@ from typing import (
     Sequence,
     Tuple,
     TypedDict,
+    overload,
 )
 
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import Occ
@@ -59,6 +60,7 @@ from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import 
 class AnsibleModuleLike(Protocol):
     """ """
 
+    @overload
     def run_command(
         self,
         args: Sequence[str],
@@ -66,10 +68,11 @@ class AnsibleModuleLike(Protocol):
         environ_update: Optional[Mapping[str, str]] = None,
         check_rc: bool = True,
     ) -> Tuple[int, str, str]:
-        ...
+        pass
 
+    @overload
     def log(self, msg: str = "", **kwargs: Any) -> None:
-        ...
+        pass
 
 
 class AnsibleResult(TypedDict, total=False):

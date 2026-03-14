@@ -7,12 +7,14 @@ php_package_name: "{{ 'php-legacy-fpm' if ansible_facts.os_family | lower == 'ar
 _debian_defaults: &DEBIAN_DEFAULTS
   - php-curl
   - php-zip
-  - php-sqlite3
+  - php-mysql
+  - php-memcache
   - php-mbstring
   - php-gd
+  - php-apcu
 
 _arch_defaults: &ARCH_DEFAULTS
-  - php-sqlite
+  - php-mysql
   - php-gd
 
 php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
@@ -115,11 +117,11 @@ php_modules:
     priority: 20
     content: |
       extension=curl
-  - name: memcached
-    enabled: false
+  - name: memcache
+    enabled: true
     priority: 20
     content: |
-      extension=memcached.so
+      extension=memcache
   - name: zip
     enabled: true
     priority: 20
@@ -127,7 +129,7 @@ php_modules:
       extension=zip
   # disable (old) modules
   - name: apcu
-    enabled: false
+    enabled: true
     priority: 20
     content: |
       extension=apcu.so

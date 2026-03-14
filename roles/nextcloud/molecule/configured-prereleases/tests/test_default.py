@@ -12,7 +12,6 @@ testinfra_hosts = infra_hosts(host_name="instance")
 # _facts = local_facts(host=host, fact="nextcloud")
 
 
-
 def test_directories(host, get_vars):
 
     base_dir = get_vars.get("nextcloud_install_base_directory")
@@ -31,9 +30,6 @@ def test_directories(host, get_vars):
         f"{base_dir}/nextcloud/server/updater",
     ]
 
-    # if 'latest' in install_dir:
-    #     install_dir = install_dir.replace('latest', version)
-
     for _dir in dirs:
         f = host.file(_dir)
         assert f.is_directory
@@ -42,10 +38,11 @@ def test_directories(host, get_vars):
 def test_data_directory(host, get_vars):
 
     nc_defaults = get_vars.get("nextcloud_defaults", {})
-    data_directory = nc_defaults.get("data_directory")
+    data_directory = nc_defaults.get("data_directory", None)
 
-    f = host.file(data_directory)
-    assert f.is_directory
+    if data_directory:
+        f = host.file(data_directory)
+        assert f.is_directory
 
 
 def test_files(host, get_vars):

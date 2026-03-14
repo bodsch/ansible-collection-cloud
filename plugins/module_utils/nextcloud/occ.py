@@ -52,6 +52,9 @@ from typing import (
 
 
 class AnsibleModuleLike(Protocol):
+    """ """
+
+    @overload
     def run_command(
         self,
         args: Sequence[str],
@@ -59,10 +62,11 @@ class AnsibleModuleLike(Protocol):
         environ_update: Optional[Mapping[str, str]] = None,
         check_rc: bool = True,
     ) -> Tuple[int, str, str]:
-        ...
+        pass
 
+    @overload
     def log(self, msg: str = "", **kwargs: Any) -> None:
-        ...
+        pass
 
 
 _UNHANDLED_EXCEPTION_RE = re.compile(
@@ -322,14 +326,12 @@ class Occ:
         return (rc, out, err)
 
     @overload
-    def check(
-        self, check_installed: Literal[False] = False
-    ) -> Tuple[int, str, str]:
-        ...
+    def check(self, check_installed: Literal[False] = False) -> Tuple[int, str, str]:
+        pass
 
     @overload
     def check(self, check_installed: Literal[True]) -> Tuple[int, bool, str, str]:
-        ...
+        pass
 
     def check(
         self, check_installed: bool = False
