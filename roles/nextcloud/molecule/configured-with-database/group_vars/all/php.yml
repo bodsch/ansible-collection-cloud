@@ -4,10 +4,23 @@ php_version: "8"
 
 php_package_name: "{{ 'php-legacy-fpm' if ansible_facts.os_family | lower == 'archlinux' else 'php-fpm' }}"
 
-php_packages:
-  - "{{ php_package_name | default('php') }}{{ php_major_version }}-imagick"
-  - "{{ php_package_name | default('php') }}{{ php_major_version }}-gd"
-  - "{{ php_package_name | default('php') }}-sqlite"
+_debian_defaults: &DEBIAN_DEFAULTS
+  - php-curl
+  - php-zip
+  - php-sqlite3
+  - php-mbstring
+  - php-gd
+
+_arch_defaults: &ARCH_DEFAULTS
+  - php-sqlite
+  - php-gd
+
+php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
+
+# php_packages:
+#   - "{{ php_package_name | default('php') }}{{ php_major_version }}-imagick"
+#   - "{{ php_package_name | default('php') }}{{ php_major_version }}-gd"
+#   - "{{ php_package_name | default('php') }}-sqlite"
 
 php_enable_php_fpm: true
 

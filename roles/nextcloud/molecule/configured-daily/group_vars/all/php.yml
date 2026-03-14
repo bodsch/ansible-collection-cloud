@@ -10,8 +10,18 @@ php_fpm_default_pool:
   delete: true
   name: www.conf
 
-php_packages:
-  - php-msgpack
+_debian_defaults: &DEBIAN_DEFAULTS
+  - php-curl
+  - php-zip
+  - php-sqlite3
+  - php-mbstring
+  - php-gd
+
+_arch_defaults: &ARCH_DEFAULTS
+  - php-sqlite
+  - php-gd
+
+php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
 
 php_fpm_pools:
   - name: worker-01

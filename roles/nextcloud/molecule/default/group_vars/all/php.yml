@@ -10,6 +10,19 @@ php_fpm_default_pool:
   delete: true
   name: www.conf
 
+_debian_defaults: &DEBIAN_DEFAULTS
+  - php-curl
+  - php-zip
+  - php-sqlite3
+  - php-mbstring
+  - php-gd
+
+_arch_defaults: &ARCH_DEFAULTS
+  - php-sqlite
+  - php-gd
+
+php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
+
 php_fpm_pools:
   - name: worker-01
     user: "{{ php_fpm_pool_user }}"
@@ -35,21 +48,6 @@ php_fpm_pools:
     php_admin_value:
       date.timezone: "Europe/Berlin"
       max_execution_time: 300
-
-_debian_defaults: &DEBIAN_DEFAULTS
-  - php-curl
-  - php-zip
-  - php-sqlite3
-  - php-mbstring
-  - php-gd
-
-_arch_defaults: &ARCH_DEFAULTS
-  # - php-zip
-  - php-sqlite
-  # - php-mbstring
-  - php-gd
-
-php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
 
 php_modules:
   - name: opcache
