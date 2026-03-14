@@ -16,8 +16,8 @@ A collection of Ansible roles for Nextcloud and Tools.
 
 * Arch Linux
 * Debian based
-    - Debian 10 / 11
-    - Ubuntu 20.10
+    - Debian 12 / 13
+    - Ubuntu 22.04 / 24.04
 
 ## Contribution
 
@@ -25,7 +25,7 @@ Please read [Contribution](CONTRIBUTING.md)
 
 ## Development,  Branches (Git Tags)
 
-The `master` Branch is my *Working Horse* includes the "latest, hot shit" and can be complete broken!
+The `main` Branch is my *Working Horse* includes the "latest, hot shit" and can be complete broken!
 
 If you want to use something stable, please use a [Tagged Version](https://github.com/bodsch/ansible-collection-cloud/tags)!
 
