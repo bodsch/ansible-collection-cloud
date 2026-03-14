@@ -36,6 +36,7 @@ class FilterModule(object):
             "nc_configured_cache": self.configured_cache,
             "nc_database_driver": self.configured_database,
             "nc_validate_passwords": self.validate_passwords,
+            "nc_php_module_name": self.php_module_name,
         }
 
     def directories(self, data: Mapping[str, Any]) -> List[str]:
@@ -68,7 +69,7 @@ class FilterModule(object):
         Returns:
             A sorted list of unique directory paths (strings).
         """
-        display.vv(f"directories(data: {data})")
+        display.vv(f"bodsch.cloud.directories(data: {data})")
 
         dirs: List[str] = []
 
@@ -135,7 +136,7 @@ class FilterModule(object):
             A list of configuration dicts for the requested cache type.
             For unknown cache types, returns an empty list (instead of raising).
         """
-        display.vv(f"configured_cache(data: {data}, cache: {cache})")
+        display.vv(f"bodsch.cloud.configured_cache(data: {data}, cache: {cache})")
 
         result: List[Dict[str, Any]] = []
 
@@ -171,7 +172,9 @@ class FilterModule(object):
             if the type is unknown. Return type is kept compatible with the previous
             implementation (may be list or any object).
         """
-        display.vv(f"configured_database(data: {data}, packages: {packages})")
+        display.vv(
+            f"bodsch.cloud.configured_database(data: {data}, packages: {packages})"
+        )
 
         database_type = data.get("type") if isinstance(data, Mapping) else None
         package = (
@@ -181,6 +184,16 @@ class FilterModule(object):
         display.vv(f"- result : {package}")
 
         return package
+
+    def php_module_name(self, data: List[str]) -> List[str]:
+        """ """
+        display.vv(f"bodsch.cloud.nc_php_module_name(data: {data})")
+
+        result: List[str] = []
+
+        result = [x.replace("php-", "").replace("legacy-", "") for x in data]
+
+        return result
 
     def validate_passwords(
         self, data: Sequence[Mapping[str, Any]], config: Mapping[str, Any]
@@ -211,7 +224,7 @@ class FilterModule(object):
         Returns:
             Validation result dict.
         """
-        display.vv(f"validate_passwords(data, config: {config})")
+        display.vv(f"bodsch.cloud.validate_passwords(data, config: {config})")
 
         result: Dict[str, Any] = {}
 

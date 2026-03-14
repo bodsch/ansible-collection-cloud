@@ -41,10 +41,10 @@ scenario:
   test_sequence:
     - destroy
     - dependency
-    - syntax
     - create
     - prepare
     - converge
+    - idempotence
     - verify
     - destroy
 

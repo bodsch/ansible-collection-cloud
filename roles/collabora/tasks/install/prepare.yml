@@ -1,37 +1,22 @@
 ---
 
-# debian based
-#
-- name: based on debian
-  tags:
-    - collabora_install
+- name: Add Collabora CODE APT repository
   when:
     - ansible_facts.os_family | lower == 'debian'
-  block:
-    - name: add collabora apt key
-      ansible.builtin.get_url:
-        url: https://collaboraoffice.com/downloads/gpg/collaboraonline-release-keyring.gpg
-        dest: /usr/share/keyrings/collabora.gpg
-        mode: '0644'
-      register: collabora_apt_key
-
-    - name: Add Collabora CODE APT repository
-      ansible.builtin.copy:
-        dest: /etc/apt/sources.list.d/collaboraonline.sources
-        content: |
-          Types: deb
-          URIs: https://www.collaboraoffice.com/repos/CollaboraOnline/CODE-deb
-          Suites: ./
-          Signed-By: /usr/share/keyrings/collabora.gpg
-        mode: '0644'
-      register: collabora_apt_repository
-
-    - name: update package cache
-      ansible.builtin.package:
-        update_cache: true
-      when:
-        - collabora_apt_key.changed or
-          collabora_apt_repository.changed
+  bodsch.core.apt_sources:
+    name: collaboraonline
+    filename: collaboraonline.sources
+    uris:
+      - https://www.collaboraoffice.com/repos/CollaboraOnline/CODE-deb
+    suites: ./
+    signed_by: /usr/share/keyrings/collabora.gpg
+    key:
+      method: download
+      url: "https://collaboraoffice.com/downloads/gpg/collaboraonline-release-keyring.gpg"
+      dest: "/usr/share/keyrings/collabora.gpg"
+      dearmor: true
+      validate: true
+    update_cache: true
 
 - name: get latest system information
   ansible.builtin.setup:

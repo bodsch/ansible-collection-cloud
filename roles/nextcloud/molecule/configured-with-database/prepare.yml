@@ -16,7 +16,7 @@
 
         - name: create depends service
           ansible.builtin.copy:
-            mode: 0755
+            mode: "0755"
             dest: /etc/init.d/net
             content: |
               #!/usr/bin/openrc-run
@@ -51,15 +51,15 @@
 
   roles:
     # - role: apparmor
-    - role: snapd
-    - role: mariadb
+    # - role: snapd
+    - role: bodsch.database.mariadb
 
 - name: prepare instance container
   hosts: instance
   gather_facts: true
 
   roles:
-    - role: bodsch.core.snakeoil
-    - role: nginx
-    - role: php-fpm
-    - role: composer
+    - role: bodsch.certs.snakeoil
+    - role: bodsch.nginx
+    - role: bodsch.php.fpm
+    # - role: composer

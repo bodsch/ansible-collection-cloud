@@ -1,12 +1,5 @@
 ---
 
-- name: merge dependencies between defaults and custom
-  ansible.builtin.set_fact:
-    nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_packages }}"
-  when:
-    - nextcloud_dependencies | count > 0 or
-      nextcloud_packages | count > 0
-
 - name: define directories
   ansible.builtin.set_fact:
     nextcloud_directories: "{{ nextcloud_defaults | bodsch.cloud.nc_directories }}"
@@ -24,28 +17,50 @@
     - nextcloud_directories is defined
     - nextcloud_directories | count > 0
 
-- name: append database package
+- name: merge dependencies between defaults and custom
   ansible.builtin.set_fact:
-    nextcloud_database_dependencies: "{{ nextcloud_database | default({}) | bodsch.cloud.nc_database_driver(nextcloud_php_packages) }}"
-
-- name: append php redis packages while redis host are defined
-  ansible.builtin.set_fact:
-    nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_php_packages.redis }}"
-  register: package_version
+    nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_packages }}"
   when:
-    - nextcloud_defaults.redis | default([]) | bodsch.cloud.nc_configured_cache('redis') | count > 0
-
-- name: append php memcache packages while memcache host are defined
-  ansible.builtin.set_fact:
-    nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_php_packages.memcache }}"
-  register: package_version
-  when:
-    - nextcloud_defaults.memcache | default({}) | bodsch.cloud.nc_configured_cache('memcache') | count > 0
+    - nextcloud_dependencies | count > 0 or
+      nextcloud_packages | count > 0
 
 - name: install dependencies
   ansible.builtin.package:
-    name: "{{ nextcloud_dependencies + nextcloud_database_dependencies }}"
+    name: "{{ nextcloud_dependencies }}"
     state: present
+
+# - name: append php package
+#   ansible.builtin.set_fact:
+#     nextcloud_php_dependencies: "{{ nextcloud_php_packages.default }}"
+#
+# - name: append database package
+#   ansible.builtin.set_fact:
+#     nextcloud_database_dependencies: "{{ nextcloud_database | default({}) | bodsch.cloud.nc_database_driver(nextcloud_php_packages) }}"
+#
+# - name: append php redis packages while redis host are defined
+#   ansible.builtin.set_fact:
+#     nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_php_packages.redis }}"
+#   register: package_version
+#   when:
+#     - nextcloud_defaults.redis | default([]) | bodsch.cloud.nc_configured_cache('redis') | count > 0
+#
+# - name: append php memcache packages while memcache host are defined
+#   ansible.builtin.set_fact:
+#     nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_php_packages.memcache }}"
+#   register: package_version
+#   when:
+#     - nextcloud_defaults.memcache | default({}) | bodsch.cloud.nc_configured_cache('memcache') | count > 0
+#
+# - name: validate php module dependencies
+#   bodsch.cloud.nextcloud_php_dependencies:
+#     package_name: "{{ php_package_name | default('php-fpm') }}"
+#     php_dependencies: "{{ nextcloud_php_dependencies | default([]) | bodsch.cloud.nc_php_module_name() }}"
+#   register: detected_php_modules
+#
+# - name: install dependencies
+#   ansible.builtin.package:
+#     name: "{{ nextcloud_php_dependencies }}"
+#     state: present
 
 - name: python support
   when:
@@ -162,7 +177,7 @@
       notify:
         - restart php-fpm
 
-    - name: check nextcloud for installation
+    - name: check nextcloud (version {{ nextcloud_version }}) for installation
       bodsch.cloud.nextcloud_occ:
         command: "check"
         working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
@@ -197,6 +212,20 @@
         msg:
           - "Error while installing of nextcloud!"
           - "{{ nc_status.msg }}"
+
+- name: check nextcloud installation
+  bodsch.cloud.nextcloud_occ:
+    command: "status"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_status
+  ignore_errors: false
+
+- name: validate state  # noqa no-handler
+  ansible.builtin.debug:
+    msg: "{{ nc_status.msg }}"
+  when:
+    - nc_status.failed
 
 - name: detect type of nextcloud config
   ansible.builtin.stat:

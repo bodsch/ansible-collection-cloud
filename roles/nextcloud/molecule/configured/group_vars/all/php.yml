@@ -1,6 +1,10 @@
 ---
 
-php_version: "8" # .3"
+php_version: "8"
+
+# default are 'php'
+# for archlinux, you can choose also 'php-lecacy'
+php_package_name: php-fpm # "{{ 'php-legacy-fpm' if ansible_facts.os_family | lower == 'archlinux' else 'php-fpm' }}"
 
 php_enable_php_fpm: true
 
@@ -10,8 +14,18 @@ php_fpm_default_pool:
   delete: true
   name: www.conf
 
-# php_packages:
-  # - php-msgpack
+_debian_defaults: &DEBIAN_DEFAULTS
+  - php-curl
+  - php-zip
+  - php-sqlite3
+  - php-mbstring
+  - php-gd
+
+_arch_defaults: &ARCH_DEFAULTS
+  - php-sqlite
+  - php-gd
+
+php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
 
 php_fpm_pools:
   - name: worker-01
@@ -118,7 +132,7 @@ php_modules:
   # disable (old) modules
   - name: apcu
     enabled: false
-    priority: 20
+    # priority: 20
     content: |
       extension=apcu
       apc.shm_size=96M

@@ -1,21 +1,31 @@
 ---
 
-php_fpm_daemon: php-fpm
+# php_fpm_daemon: php-fpm
 
 nextcloud_owner_default: http
 
 nextcloud_dependencies:
   - python-pip
-  - php-intl
-  - php-gd
+
+php_fpm_daemon: "{{ php_package_name | default('php-fpm') }}{{ php_major_version }}"
 
 nextcloud_php_packages:
+  default: []
+    # - "{{ php_package_name | default('php') }}{{ php_major_version }}-xmlrpc"
+    # - php{{ php_version }}-ldap
+    # - php{{ php_version }}-curl
+    # - php{{ php_version }}-mbstring
+    # - php{{ php_version }}-zip
+    # - php{{ php_version }}-intl
+    # - "{{ php_package_name | default('php') }}{{ php_major_version }}-imagick"
+    # - "{{ php_package_name | default('php') }}{{ php_major_version }}-gd"
+    # - "{{ php_package_name | default('php') }}{{ php_major_version }}-apcu"
   redis:
-    - php-redis
+    - "redis"
   memcache:
-    - php-memcached
+    - "memcache"
   sqlite:
-    - php-sqlite
+    - "sqlite3"
   #mysql:
   #  - php{{ php_version }}-mysql
 ...

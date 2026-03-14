@@ -296,9 +296,9 @@ class NextcloudValidatePHPVersion:
             else None
         )
 
-        self.module.log(f" - excluded_versions: {excluded_versions}")
-        self.module.log(f" - min_str          : {min_str}")
-        self.module.log(f" - max_str          : {max_str}")
+        # self.module.log(f" - excluded_versions: {excluded_versions}")
+        # self.module.log(f" - min_str          : {min_str}")
+        # self.module.log(f" - max_str          : {max_str}")
 
         if (
             constraints.min_inclusive_id is not None
@@ -441,9 +441,7 @@ class NextcloudValidatePHPVersion:
           PhpVersionConstraints derived from the file.
         """
 
-        self.module.log(
-            f"NextcloudValidatePHPVersion::_parse_constraints(php_source: {php_source})"
-        )
+        self.module.log("NextcloudValidatePHPVersion::_parse_constraints(php_source)")
 
         min_incl: Optional[int] = None
         max_excl: Optional[int] = None
@@ -451,7 +449,7 @@ class NextcloudValidatePHPVersion:
 
         for op, num_str in _CONSTRAINT_IF_RE.findall(php_source):
 
-            self.module.log(f"  - operator   : {op} / version id : {num_str}")
+            # self.module.log(f"  - operator   : {op} / version id : {num_str}")
             vid = int(num_str)
 
             # if (PHP_VERSION_ID < X) => requires >= X

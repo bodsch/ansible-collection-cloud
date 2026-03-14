@@ -16,7 +16,7 @@ testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
 ).get_hosts(HOST)
 
 
-def pp_json(json_thing, sort=True, indents=2):
+def print(json_thing, sort=True, indents=2):
     if type(json_thing) is str:
         print(json.dumps(json.loads(json_thing), sort_keys=sort, indent=indents))
     else:
@@ -118,37 +118,34 @@ def get_vars(host):
 
 def local_facts(host):
     """
-    return local fact
+    return local facts
     """
     return (
-        host.ansible("setup").get("ansible_facts").get("ansible_local").get("php_fpm")
+        host.ansible("setup")
+        .get("ansible_facts")
+        .get("ansible_local")
+        .get("collabora_office")
     )
 
 
-def test_service(host):
-    """
-    is service running and enabled
-    """
-    service = host.service(local_facts(host).get("daemon"))
+def test_directories(host, get_vars):
 
-    assert service.is_enabled
-    assert service.is_running
+    dirs = ["/usr/local/opt/calcardbackup", "/etc/calcardbackup"]
+
+    for _dir in dirs:
+        f = host.file(_dir)
+        assert f.is_directory
 
 
-def test_fpm_pools(host, get_vars):
-    """
-    test sockets
-    """
-    for i in host.socket.get_listening_sockets():
-        print(i)
+def test_files(host, get_vars):
 
-    distribution = host.system_info.distribution
-    release = host.system_info.release
+    files = [
+        "/etc/calcardbackup/calcardbackup.conf",
+        "/usr/bin/calcardbackup",
+        "/usr/lib/systemd/system/calcardbackup.timer",
+        "/usr/lib/systemd/system/calcardbackup.service",
+    ]
 
-    socket_name = "/run/php/worker-01.sock"
-
-    f = host.file(socket_name)
-    assert f.exists
-
-    if not (distribution == "ubuntu" and release == "18.04"):
-        assert host.socket(f"unix://{socket_name}").is_listening
+    for _file in files:
+        f = host.file(_file)
+        assert f.is_file

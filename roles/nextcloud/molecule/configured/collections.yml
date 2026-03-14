@@ -2,5 +2,9 @@
 
 collections:
   - name: bodsch.certs
+  # # - name: bodsch.php
+  # - name: https://github.com/bodsch/ansible-collection-php
+  #   type: git
+  #   version: main
 
 ...

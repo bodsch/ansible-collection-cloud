@@ -223,10 +223,21 @@ class NextcloudClient(Occ):
 
             if int(rc) == 0:
                 return dict(failed=False, msg=out)
+
+            if err:
+                out += f"ERROR: {err}"
+
             return dict(failed=True, msg=self._clean_html(out))
 
         if self.command == "status":
+            """ """
             rc, installed, version_string, db_upgrade, err = self.status()
+
+            # self.module.log(f"  - {rc}")
+            # self.module.log(f"  - {installed}")
+            # self.module.log(f"  - {version_string}")
+            # self.module.log(f"  - {db_upgrade}")
+            # self.module.log(f"  - {err}")
 
             if db_upgrade:
                 return dict(
@@ -237,6 +248,7 @@ class NextcloudClient(Occ):
 
             if int(rc) == 0:
                 return dict(failed=False, upgrade=db_upgrade, msg=err)
+
             return dict(failed=True, upgrade=db_upgrade, msg=self._clean_html(err))
 
         if self.command == "maintenance:install":

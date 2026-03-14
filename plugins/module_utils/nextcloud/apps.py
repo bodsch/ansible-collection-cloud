@@ -36,6 +36,7 @@ Avoid logging sensitive values (e.g. passwords) if they are passed via environme
 variables or arguments. While this module does not directly handle passwords, it
 invokes `occ` and may operate in an environment where secrets exist.
 """
+
 from __future__ import absolute_import, print_function
 
 import json
@@ -50,6 +51,7 @@ from typing import (
     Sequence,
     Tuple,
     TypedDict,
+    overload,
 )
 
 from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import Occ
@@ -57,6 +59,8 @@ from ansible_collections.bodsch.cloud.plugins.module_utils.nextcloud.occ import 
 
 class AnsibleModuleLike(Protocol):
     """ """
+
+    @overload
     def run_command(
         self,
         args: Sequence[str],
@@ -64,14 +68,16 @@ class AnsibleModuleLike(Protocol):
         environ_update: Optional[Mapping[str, str]] = None,
         check_rc: bool = True,
     ) -> Tuple[int, str, str]:
-        ...
+        pass
 
+    @overload
     def log(self, msg: str = "", **kwargs: Any) -> None:
-        ...
+        pass
 
 
 class AnsibleResult(TypedDict, total=False):
     """ """
+
     failed: bool
     changed: bool
     msg: Any
@@ -119,7 +125,7 @@ class NextcloudApps(Occ):
 
         self.module = module
 
-        self.module.log(f"NextcloudApps::__init__({owner}, {working_dir})")
+        # self.module.log(f"NextcloudApps::__init__({owner}, {working_dir})")
 
         self.owner = owner
         self.working_dir = working_dir
@@ -154,7 +160,7 @@ class NextcloudApps(Occ):
             The app is installed but kept disabled (`--keep-disabled`) so that
             enabling can be controlled separately (e.g., group restrictions).
         """
-        self.module.log(f"NextcloudApps::install_app({app_name})")
+        # self.module.log(f"NextcloudApps::install_app({app_name})")
 
         args = self._build_args("app:install", "--no-ansi", "--keep-disabled", app_name)
         rc, out, err = self._exec(args, check_rc=False)
@@ -182,7 +188,7 @@ class NextcloudApps(Occ):
                 - changed: True if removal succeeded.
                 - msg: Human-readable outcome message or stdout on failure.
         """
-        self.module.log(f"NextcloudApps::remove_app({app_name})")
+        # self.module.log(f"NextcloudApps::remove_app({app_name})")
 
         args = self._build_args("app:remove", "--no-ansi", app_name)
         rc, out, err = self._exec(args, check_rc=False)
@@ -214,7 +220,7 @@ class NextcloudApps(Occ):
             This method currently does not return the resolved path, only whether
             it appears to exist (based on command return code).
         """
-        self.module.log(f"NextcloudApps::path_app({app_name})")
+        # self.module.log(f"NextcloudApps::path_app({app_name})")
 
         args = self._build_args("app:getpath", "--no-ansi", app_name)
         rc, out, err = self._exec(args, check_rc=False)
@@ -248,7 +254,7 @@ class NextcloudApps(Occ):
         Notes:
             This uses the `occ` group's enabling flags (`--groups`) where supported.
         """
-        self.module.log(f"NextcloudApps::enable_app({app_name}, {groups})")
+        # self.module.log(f"NextcloudApps::enable_app({app_name}, {groups})")
 
         args = self._build_args("app:enable", "--no-ansi", app_name)
 
@@ -279,7 +285,7 @@ class NextcloudApps(Occ):
                 - changed: True if disabling succeeded.
                 - msg: Human-readable outcome message or stdout on failure.
         """
-        self.module.log(f"NextcloudApps::disable_app({app_name})")
+        # self.module.log(f"NextcloudApps::disable_app({app_name})")
 
         args = self._build_args("app:disable", "--no-ansi", app_name)
         rc, out, err = self._exec(args, check_rc=False)
@@ -326,7 +332,7 @@ class NextcloudApps(Occ):
                     php occ config:app:set
                         --output json --value yes --update-only richdocuments disable_certificate_verification
             """
-        self.module.log(f"NextcloudApps::app_settings({app_name}, {app_settings})")
+        # self.module.log(f"NextcloudApps::app_settings({app_name}, {app_settings})")
 
         result_state: List[Dict[str, Any]] = []
         any_changed = False
@@ -426,7 +432,7 @@ class NextcloudApps(Occ):
             The exact JSON schema depends on the Nextcloud version. The method expects
             top-level keys "enabled" and "disabled" that are mapping-like.
         """
-        self.module.log("NextcloudApps::list_apps()")
+        # self.module.log("NextcloudApps::list_apps()")
 
         app_names: Dict[str, Any] = {}
 
@@ -473,7 +479,7 @@ class NextcloudApps(Occ):
         Notes:
             Nextcloud output may change across versions; adjust the regex if needed.
         """
-        self.module.log(f"NextcloudApps::check_for_updates({check_installed})")
+        # self.module.log(f"NextcloudApps::check_for_updates({check_installed})")
 
         res: Dict[str, str] = {}
 
@@ -508,7 +514,7 @@ class NextcloudApps(Occ):
             This method does not interpret stdout/stderr beyond returning them.
             Callers typically decide "changed" based on rc and/or output content.
         """
-        self.module.log(f"NextcloudApps::update_app({app_name})")
+        # self.module.log(f"NextcloudApps::update_app({app_name})")
 
         args = self._build_args("app:update", "--no-ansi", app_name)
         rc, out, err = self._exec(args, check_rc=False)

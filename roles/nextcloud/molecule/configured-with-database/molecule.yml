@@ -8,12 +8,6 @@ dependency:
 driver:
   name: docker
 
-lint: |
-  set -e
-  yamllint .
-  ansible-lint .
-  flake8 .
-
 platforms:
   - name: database
     image: "ghcr.io/bodsch/docker-ansible/ansible-debian:12"
@@ -82,6 +76,7 @@ scenario:
     - create
     - prepare
     - converge
+    - idempotence
     - verify
     - destroy
 
