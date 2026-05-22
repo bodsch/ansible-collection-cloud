@@ -346,9 +346,9 @@ class NextcloudApps(Occ):
                 desired_str = config_value
             else:
                 # Avoid logging raw values (could be sensitive); log only type + key.
-                self.module.log(
-                    msg=f"ignore non-string value for key {config_key} (type={type(config_value).__name__})"
-                )
+                # self.module.log(
+                #     msg=f"ignore non-string value for key {config_key} (type={type(config_value).__name__})"
+                # )
                 continue
 
             # 1) Read current value to make the operation idempotent.

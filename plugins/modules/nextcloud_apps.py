@@ -293,7 +293,7 @@ class NextcloudApps(NextcloudAppsHelper):
                     res[app_name] = dict(
                         failed=failed,
                         changed=changed,
-                        msg=(
+                        state=(
                             msg_out
                             if msg_out
                             else ("No changes required." if not changed else "Updated.")
@@ -316,13 +316,46 @@ class NextcloudApps(NextcloudAppsHelper):
 
                 result_state.append(res)
 
-        _state, _changed, _failed, state, changed, failed = results(
+        # filter empty dictionaries
+        result_state = [item for item in result_state if item]
+        # rename key
+        # result_state = rename_key(result_state, "msg", "state")
+
+        has_state, has_changed, has_failed, state, changed, failed = results(
             self.module, result_state
         )
 
-        result = dict(changed=_changed, failed=failed, state=result_state)
+        result = dict(changed=has_changed, failed=has_failed, state=result_state)
 
         return result
+
+
+def rename_key(data: Any, old_key: str, new_key: str) -> Any:
+    """
+    Recursively rename dictionary keys inside nested structures.
+
+    Args:
+        data:
+            Arbitrary nested structure consisting of dicts/lists.
+        old_key:
+            Key to replace.
+        new_key:
+            Replacement key.
+
+    Returns:
+        Modified structure with renamed keys.
+    """
+
+    if isinstance(data, dict):
+        return {
+            (new_key if key == old_key else key): rename_key(value, old_key, new_key)
+            for key, value in data.items()
+        }
+
+    if isinstance(data, list):
+        return [rename_key(item, old_key, new_key) for item in data]
+
+    return data
 
 
 def main():
@@ -340,8 +373,6 @@ def main():
 
     kc = NextcloudApps(module)
     result = kc.run()
-
-    module.log(msg=f"= result : '{result}'")
 
     module.exit_json(**result)
 

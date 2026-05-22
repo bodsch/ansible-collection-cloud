@@ -125,7 +125,7 @@ class ModuleParams(TypedDict, total=False):
     owner: str
 
 
-class NextcloudApps(NextcloudAppsHelper):
+class NextcloudUpdateApps(NextcloudAppsHelper):
     """ """
 
     module: AnsibleModule
@@ -193,7 +193,7 @@ class NextcloudApps(NextcloudAppsHelper):
                     app: dict(
                         failed=False,
                         changed=True,
-                        msg=f"successfully updated to version {version}.",
+                        state=f"successfully updated to version {version}.",
                     )
                 }
             else:
@@ -201,7 +201,7 @@ class NextcloudApps(NextcloudAppsHelper):
                     app: dict(
                         failed=True,
                         changed=False,
-                        msg=(
+                        state=(
                             update_err.strip() or f"update to version {version} failed."
                         ),
                     )
@@ -209,11 +209,23 @@ class NextcloudApps(NextcloudAppsHelper):
 
             result_state.append(res)
 
-        _state, _changed, _failed, _state_detail, _changed_detail, failed = results(
+        # filter empty dictionaries
+        result_state = [item for item in result_state if item]
+
+        has_state, has_changed, has_failed, state, changed, failed = results(
             self.module, result_state
         )
 
-        result = dict(changed=_changed, failed=failed, state=result_state)
+        # self.module.log(f" - result_state: {result_state}")
+        #
+        # self.module.log(f" - _state  : {_state}")
+        # self.module.log(f" - _changed: {_changed}")
+        # self.module.log(f" - _failed : {_failed}")
+        # self.module.log(f" - state   : {state}")
+        # self.module.log(f" - changed : {changed}")
+        # self.module.log(f" - failed  : {failed}")
+
+        result = dict(changed=has_changed, failed=has_failed, state=result_state)
 
         return result
 
@@ -234,10 +246,8 @@ def main() -> None:
         supports_check_mode=False,
     )
 
-    kc = NextcloudApps(module)
+    kc = NextcloudUpdateApps(module)
     result = kc.run()
-
-    module.log(msg=f"= result : '{result}'")
 
     module.exit_json(**result)
 
