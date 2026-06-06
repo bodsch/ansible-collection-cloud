@@ -15,6 +15,7 @@ galaxy_info:
         # 10
         - buster
         - bullseye
+        - trixie
 
   galaxy_tags:
     - cloud

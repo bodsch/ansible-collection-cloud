@@ -1,26 +1,30 @@
 ---
 
 galaxy_info:
-  role_name: nextcloud
+  role_name: ical_backup
   namespace: bodsch
 
   author: Bodo Schulz
-  description: installs and configure nextcloud
+  description: ansible role to setup nextcloud-ical-backup
   license: Apache
-  min_ansible_version: "2.9"
+  min_ansible_version: 2.9
 
   platforms:
     - name: ArchLinux
     - name: Debian
       versions:
-        # 10
+        # 11
         - buster
         - bullseye
         - trixie
 
   galaxy_tags:
     - nextcloud
-    - cloud
+    - ical
+    - calendar
+    - contacts
+    - backup
+    - ical_backup
 
 dependencies: []
 

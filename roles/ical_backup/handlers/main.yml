@@ -1,0 +1,20 @@
+---
+
+- name: daemon reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+    force: true
+  when:
+    - ansible_facts.service_mgr == 'systemd'
+
+- name: restart nextcloud-ical-backup service
+  ansible.builtin.service:
+    name: nextcloud-ical-backup.service
+    state: restarted
+
+- name: restart nextcloud-ical-backup timer
+  ansible.builtin.service:
+    name: nextcloud-ical-backup.timer
+    state: restarted
+
+...

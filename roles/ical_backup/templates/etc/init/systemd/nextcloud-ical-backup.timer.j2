@@ -1,0 +1,29 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description         = Exports calendars and addressbooks from ownCloud/Nextcloud
+After               = mariadb.service
+
+[Timer]
+# {{ ical_backup_cron.cron }}
+{% if ical_backup_cron.cron.minute is defined and
+      ical_backup_cron.cron.hour is defined and
+      ical_backup_cron.cron.weekday is defined and
+      ical_backup_cron.cron.minute | string | length > 0 and
+      ical_backup_cron.cron.hour | string | length > 0 %}
+{#
+# basic format: * *-*-* *:*:*
+#               |   |     +---- *:*:*    is to signify the time component of the calnedar event. So it is - hour:minute:second
+#               |   +---------- *-*-*    To signify the calendar date. Which means it breaks down to - year-month-date.
+#               +--------------          To signify the day of the week eg:- Sat,Thu,Mon
+#}
+OnCalendar          = {{ ical_backup_cron.cron.weekday | default('') }} *-*-* {{ ical_backup_cron.cron.hour | default('2') }}:{{ ical_backup_cron.cron.minute | default('58') }}:00
+{% else %}
+OnCalendar          = monday 04:00
+{% endif %}
+Persistent          = true
+Unit                = ical_backup.service
+
+[Install]
+WantedBy            = timers.target

@@ -1,0 +1,34 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description             = Exports calendars and addressbooks from ownCloud/Nextcloud
+Documentation           = https://github.com/bodsch/nextcloud-ical-backup/blob/main/README.md
+
+ConditionPathExists     = {{ ical_backup_config.nextcloud_path }}
+ConditionPathExists     = {{ ical_backup_config.backupfolder }}
+
+[Service]
+Type                    = oneshot
+ExecStart               = /usr/bin/nextcloud-ical-backup --config /etc/nextcloud-ical-backup/config.toml
+
+WorkingDirectory        = /tmp
+User                    = root
+KillMode                = process
+
+PrivateTmp              = yes
+ProtectSystem           = full
+ProtectHome             = true
+
+SyslogIdentifier        = nextcloud-ical-backup
+
+StartLimitInterval      = 5
+StartLimitBurst         = 10
+
+Restart                 = on-failure
+RestartSec              = 320s
+RestartSteps            = 5
+RestartMaxDelaySec      = 320s
+
+[Install]
+WantedBy                = multi-user.target
