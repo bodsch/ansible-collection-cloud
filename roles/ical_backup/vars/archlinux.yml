@@ -1,0 +1,6 @@
+---
+
+ical_backup_dependencies:
+  - python-requests
+  - python-dateutil
+...

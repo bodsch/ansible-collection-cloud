@@ -1,0 +1,23 @@
+---
+
+- name: create install directory
+  ansible.builtin.file:
+    path: "{{ ical_backup_install_path }}"
+    state: directory
+    # owner: "{{ ical_backup_system_user }}"
+    # group: "{{ ical_backup_system_group }}"
+    mode: "0755"
+
+- name: deploy and activate nextcloud-ical-backup version {{ ical_backup_version }}
+  when:
+    - not running_in_check_mode
+  bodsch.core.deploy_and_activate:
+    src_dir: "{{ ical_backup_local_tmp_directory }}"
+    install_dir: "{{ ical_backup_install_path }}"
+    link_dir: "/usr/bin"
+    remote_src: "{{ ('true' if ical_backup_direct_download else 'false') | bool }}"
+    # owner: "{{ ical_backup_user.name }}"
+    # group: "{{ ical_backup_user.group }}"
+    mode: "0755"
+    items:
+      - name: "{{ ical_backup_release.binary }}"

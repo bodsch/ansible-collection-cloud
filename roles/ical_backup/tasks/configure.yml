@@ -1,0 +1,22 @@
+---
+
+- name: merge automysqlbackup configuration between defaults and custom
+  ansible.builtin.set_fact:
+    ical_backup_config: "{{ ical_backup_defaults_config | combine(ical_backup_config, recursive=True) }}"
+
+- name: create directories
+  when:
+    - not running_in_check_mode
+  bodsch.core.directories:
+    mode: "0750"
+    paths:
+      - path: /etc/nextcloud-ical-backup
+      - path: "{{ ical_backup_config.backupfolder }}"
+
+- name: create config
+  ansible.builtin.template:
+    src: etc/nextcloud-ical-backup/config.toml.j2
+    dest: /etc/nextcloud-ical-backup/config.toml
+    mode: "0640"
+
+...

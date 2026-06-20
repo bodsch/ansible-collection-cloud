@@ -1,0 +1,113 @@
+---
+
+- name: define download information
+  when:
+    - not running_in_check_mode
+  ansible.builtin.set_fact:
+    ical_backup_release: "{{ ical_backup_defaults_release | combine(ical_backup_release, recursive=True) }}"
+
+- name: define delegate instance for download handling
+  when:
+    - not running_in_check_mode
+    - ical_backup_direct_download
+  ansible.builtin.set_fact:
+    ical_backup_delegate_to: "{{ (ansible_facts | default({})) | bodsch.core.hostname(inventory_hostname=inventory_hostname) }}"
+    ical_backup_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/forgejo', true) }}/{{ ical_backup_version }}"
+
+- name: create download directory
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ ical_backup_delegate_to }}"
+  run_once: "{{ 'false' if ical_backup_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ ical_backup_local_tmp_directory }}"
+    state: directory
+    mode: "0750"
+
+- name: detect the downloaded nextcloud-ical-backup archive
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ ical_backup_delegate_to }}"
+  run_once: "{{ 'false' if ical_backup_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ ical_backup_local_tmp_directory }}/{{ ical_backup_release.file }}"
+  register: stat_ical_backup_archive
+
+- name: download
+  when:
+    - not running_in_check_mode
+    - stat_ical_backup_archive.stat is defined
+    - not stat_ical_backup_archive.stat.exists | default('false')
+  block:
+
+    - name: resolve nextcloud-ical-backup release
+      become: false
+      delegate_to: localhost
+      run_once: true
+      bodsch.scm.github_release:
+        project: bodsch
+        repository: nextcloud-ical-backup
+        version: "{{ ical_backup_version }}"          # "latest" | "2.53.0" | "v2.53.0"
+        architecture: "{{ ansible_facts.architecture }}"
+        system: "{{ ansible_facts.system }}"
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      register: _release
+
+    - name: download nextcloud-ical-backup archive
+      become: false
+      delegate_to: "{{ ical_backup_delegate_to }}"
+      run_once: "{{ 'false' if ical_backup_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ _release.download_url }}"
+        dest: "{{ ical_backup_local_tmp_directory }}/{{ _release.file }}"
+        checksum: "{{ _release.checksum_string | default(omit) }}"
+        mode: "0640"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ ical_backup_delegate_to }}"
+      run_once: "{{ 'false' if ical_backup_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ ical_backup_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+- name: find extracted binaries
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ ical_backup_delegate_to }}"
+  run_once: "{{ 'false' if ical_backup_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ ical_backup_local_tmp_directory }}/{{ ical_backup_release.binary }}"
+  register: stat_ical_backup_binary
+
+- name: extract nextcloud-ical-backup archive
+  when:
+    - not running_in_check_mode
+    # - stat_ical_backup_downloaded_artefact.stat.mimetype == "application/zip"
+    - stat_ical_backup_binary.stat is defined
+    - not stat_ical_backup_binary.stat.exists | default('false')
+  become: false
+  delegate_to: "{{ ical_backup_delegate_to }}"
+  run_once: "{{ 'false' if ical_backup_direct_download else 'true' }}"
+  ansible.builtin.unarchive:
+    src: "{{ ical_backup_local_tmp_directory }}/{{ ical_backup_release.file }}"
+    dest: "{{ ical_backup_local_tmp_directory }}/"
+    copy: false
+
+...

@@ -1,0 +1,58 @@
+---
+
+ical_backup_install_path: /usr/local/opt/nextcloud-ical-backup/{{ ical_backup_version }}
+
+ical_backup_delegate_to: localhost
+
+ical_backup_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/nextcloud-ical-backup', true) }}/{{ ical_backup_version }}"
+
+ical_backup_cache_directory: /var/cache/ansible/nextcloud-ical-backup
+
+ical_backup_remote_tmp_directory: "{{ ical_backup_cache_directory }}/{{ ical_backup_version }}"
+
+ical_backup_dependencies:
+  - gnupg2
+
+ical_backup_defaults_config:
+  nextcloud_path: "/usr/share/nginx/www/"
+  # nextcloud_url: "https://www.my_nextcloud.net"
+  # trustful_certificate: true
+  # users_file: ""
+  backupfolder: "/backup/"
+  # date_extension: "-%Y-%m-%d"
+  keep_days_like_time_machine: "0"
+  delete_backups_older_than: "0"
+  # compress: true
+  # compression_method: "tar.gz"
+  # encrypt_backup: false
+  # gpg_passphrase: ""
+  backup_addressbooks: true
+  backup_calendars: true
+  include_shares: true
+
+ical_backup_defaults_cron:
+  type: systemd       # alternative: systemd
+  daemon: ""          # "{{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true       # [true, false]
+  cron:
+    minute: "58"
+    hour: "2"
+    weekday: ""
+
+ical_backup_defaults_release:
+  download_url: https://github.com/bodsch/nextcloud-ical-backup/releases
+  file: nextcloud-ical-backup_{{ ical_backup_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz
+  checksum: nextcloud-ical-backup_{{ ical_backup_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz.sha256
+  binary: nextcloud-ical-backup
+
+go_arch_map:
+  i386: '386'
+  x86_64: 'amd64'
+
+system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system
+
+...

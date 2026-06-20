@@ -1,0 +1,33 @@
+---
+
+ical_backup_version: "1.1.0"
+
+ical_backup_user:
+  group: ical_backup
+  name: ical_backup
+  home: /home/ical_backup
+
+ical_backup_system:
+  update: true
+  upgrade: false
+
+ical_backup_release:
+  download_url: https://github.com/bodsch/nextcloud-ical-backup/releases
+  file: nextcloud-ical-backup_{{ ical_backup_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz
+  checksum: nextcloud-ical-backup_{{ ical_backup_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz.sha256
+  binary: nextcloud-ical-backup
+
+ical_backup_direct_download: false
+
+ical_backup_config: {}
+
+ical_backup_cron:
+  type: systemd       # alternative supported: cron or systemd
+  daemon: ""          # "{{ 'cron' if ansible_facts.os_family | lower == 'debian' else 'cronie' }}"
+  enabled: true       # [true, false]
+  cron:
+    minute: "58"
+    hour: "3"
+    weekday: ""       # for systemd: 'Sat,Thu,Mon'
+
+...
