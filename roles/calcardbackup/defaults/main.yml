@@ -1,6 +1,6 @@
 ---
 
-calcardbackup_version: "8.2.0"
+calcardbackup_version: "11.0.2"
 
 calcardbackup_user:
   group: calcardbackup

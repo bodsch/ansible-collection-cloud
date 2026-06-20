@@ -1,6 +1,6 @@
 ---
 
-- name: merge ical_backup configuration between defaults and custom
+- name: merge nextcloud-ical-backup configuration between defaults and custom
   ansible.builtin.set_fact:
     ical_backup_cron: "{{ ical_backup_defaults_cron | combine(ical_backup_cron, recursive=True) }}"
 
@@ -18,7 +18,7 @@
             name: Exports calendars and addressbooks from ownCloud/Nextcloud
             job: /usr/bin/nextcloud-ical-backup
             user: root
-            cron_file: ical_backup
+            cron_file: nextcloud-ical-backup
             state: absent
           failed_when: false
 
@@ -77,7 +77,7 @@
             hour: "{{ ical_backup_cron.hour | default('2') }}"
             weekday: "{{ ical_backup_cron.weekday | default('*') }}"
             user: root
-            cron_file: ical_backup
+            cron_file: nextcloud-ical-backup
             state: present
 
     - name: systemd unit
