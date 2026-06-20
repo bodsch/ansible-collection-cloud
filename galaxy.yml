@@ -3,7 +3,7 @@
 namespace: bodsch
 name: cloud
 
-version: 1.2.1
+version: 1.3.0
 
 readme: README.md
 
@@ -24,8 +24,8 @@ tags:
   - office
 
 dependencies:
-  bodsch.core: ">=2.11.0"
-  bodsch.scm: ">=1.8.0"
+  bodsch.core: ">=2.13.5"
+  bodsch.scm: ">=1.11.0"
   bodsch.php: ">=1.3.0"
 
 repository: https://github.com/bodsch/ansible-collection-cloud
