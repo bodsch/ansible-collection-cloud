@@ -55,12 +55,6 @@ nextcloud_admin:
   username: admin
   password: admin
 
-nextcloud_password_validation:
-  upper_and_lower_case: true
-  special_character: false
-  numeric_character: false
-  length: 10
-  
 nextcloud_instande_id: ""
 nextcloud_password_salt: ""
 nextcloud_data_directory: ""
@@ -198,6 +192,8 @@ nextcloud_background_jobs:
 
 ### `nextcloud_groups`
 
+**OBSOLETE** Moved into Role: `bodsch.cloud.nextcloud_users`
+
 Creates Groups in Nextcloud.
 
 | Variable       | default    | Description |
@@ -216,6 +212,8 @@ nextcloud_groups:
 ```
 
 ### `nextcloud_users`
+
+**OBSOLETE** Moved into Role: `bodsch.cloud.nextcloud_users`
 
 Creates Users in Nextcloud.
 
@@ -241,6 +239,8 @@ nextcloud_users:
 
 ### `nextcloud_apps`
 
+**OBSOLETE** Moved into Role: `bodsch.cloud.nextcloud_apps`
+
 Install Nextcloud Apps.
 
 | Variable        | default    | Description |
@@ -264,18 +264,6 @@ nextcloud_apps:
       wopi_allowlist: "127.0.0.1/32"
       wopi_url: https://office.molecule.lan
 ```
-
----
-
-## Contribution
-
-Please read [Contribution](CONTRIBUTING.md)
-
-## Development,  Branches (Git Tags)
-
-The `master` Branch is my *Working Horse* includes the "latest, hot shit" and can be complete broken!
-
-If you want to use something stable, please use a [Tagged Version](https://github.com/bodsch/ansible-nextcloud/-/tags)!
 
 ---
 

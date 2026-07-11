@@ -1,0 +1,26 @@
+---
+
+- name: nextcloud apps - check for updates
+  bodsch.cloud.nextcloud_update_apps:
+    state: "check"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_list_of_apps_that_can_be_updated
+
+- name: nextcloud apps - perform updates
+  when:
+    - nc_list_of_apps_that_can_be_updated.updates
+  bodsch.cloud.nextcloud_update_apps:
+    state: "update"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_result_of_the_apps_that_have_been_updated
+
+- name: show result of the update process
+  when:
+    - nc_result_of_the_apps_that_have_been_updated.state is defined
+    - nc_result_of_the_apps_that_have_been_updated.changed | default(false) | bool
+  ansible.builtin.debug:
+    msg: "{{ nc_result_of_the_apps_that_have_been_updated.state }}"
+
+...

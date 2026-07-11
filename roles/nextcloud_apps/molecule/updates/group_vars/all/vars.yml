@@ -1,0 +1,10 @@
+---
+
+nextcloud_apps:
+  - name: calendar
+    state: enabled
+  - name: contacts
+    state: enabled
+  - name: groupfolders
+    state: enabled
+...
