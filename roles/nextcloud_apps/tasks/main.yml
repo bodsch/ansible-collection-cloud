@@ -1,0 +1,25 @@
+---
+
+- name: prepare
+  ansible.builtin.include_tasks: prepare.yml
+  tags:
+    - nextcloud_apps_prepare
+    - nextcloud_apps_configure
+
+- name: update nextcloud apps
+  ansible.builtin.include_tasks: apps_updates.yml
+  when:
+    - nextcloud_update is defined
+    - nextcloud_update | default(false) | bool
+  tags:
+    - nextcloud_apps_configure
+
+- name: install nextcloud apps
+  ansible.builtin.include_tasks: apps_install.yml
+  when:
+    - nextcloud_apps is defined
+    - nextcloud_apps | default([]) | count > 0
+  tags:
+    - nextcloud_apps_configure
+
+...

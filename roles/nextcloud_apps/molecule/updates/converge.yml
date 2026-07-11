@@ -1,0 +1,15 @@
+---
+
+- name: converge for version 33.0.0
+  hosts: instance
+  # gather_facts: true
+  any_errors_fatal: true
+  vars:
+    nextcloud_release: {}
+    nextcloud_version: "33.0.0"
+
+  roles:
+    # update nextcloud
+    - role: bodsch.cloud.nextcloud
+    # install nextcloud_apps after nextcloud update
+    - role: bodsch.cloud.nextcloud_apps

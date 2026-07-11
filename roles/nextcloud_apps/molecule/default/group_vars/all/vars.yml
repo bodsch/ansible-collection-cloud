@@ -1,0 +1,24 @@
+---
+
+nextcloud_apps:
+  - name: calendar
+    state: enabled
+  # - name: tasks
+  #   state: absent
+  # - name: deck
+  #   state: enabled
+  # - name: contacts
+  #   state: enabled
+  # - name: forms
+  #   state: enabled
+  # - name: groupfolders
+  #   state: enabled
+  # - name: recognize
+  #   state: enabled
+  # - name: mail
+  #   state: absent
+  #   settings:
+  #     antispam_reporting_ham: ""
+  #     antispam_reporting_spam: ""
+
+...

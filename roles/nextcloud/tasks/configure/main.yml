@@ -102,13 +102,13 @@
   when:
     - nextcloud_background_jobs.type | default('') |  string | lower in ["cron", "ajax", "webcron", "systemd"]
 
-- name: manage nextcloud groups
-  ansible.builtin.include_tasks: groups.yml
+# - name: manage nextcloud groups
+#   ansible.builtin.include_tasks: groups.yml
+#
+# - name: manage nextcloud users
+#   ansible.builtin.include_tasks: users.yml
 
-- name: manage nextcloud users
-  ansible.builtin.include_tasks: users.yml
-
-- name: manage nextcloud apps
-  ansible.builtin.include_tasks: apps.yml
+# - name: manage nextcloud apps
+#   ansible.builtin.include_tasks: apps.yml
 
 ...

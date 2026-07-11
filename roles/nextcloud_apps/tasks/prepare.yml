@@ -1,0 +1,89 @@
+---
+
+- name: re-read setup
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - facter
+      - local
+
+- name: include OS specific configuration
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      paths:
+        - "vars"
+      files:
+        # eg. debian-10 / ubuntu-20 / centos-8 / oraclelinux-8
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.distribution_major_version }}.yml"
+        # eg. archlinux-systemd / archlinux-openrc
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.service_mgr | lower }}.yml"
+        # eg. debian / ubuntu / centos / oraclelinux
+        - "{{ ansible_facts.distribution | lower }}.yml"
+        # eg. redhat / debian
+        - "{{ ansible_facts.os_family | lower }}.yml"
+        - default.yaml
+      skip: true
+
+- name: define local fact for nextcloud
+  ansible.builtin.set_fact:
+    nextcloud_facts: "{{ ansible_local.nextcloud | default({}) }}"
+
+- name: define nextcloud_version from local facts
+  ansible.builtin.set_fact:
+    current_nextcloud_version: "{{ nextcloud_facts.version }}"
+  when:
+    - nextcloud_facts is defined
+    - nextcloud_facts.version is defined
+
+- name: warn against missing nextcloud
+  when:
+    - current_nextcloud_version | string | length == 0
+  block:
+    - name: No Nextcloud installation found
+      ansible.builtin.fail:
+        msg: "No installed Nextcloud instance could be found.\nTherefore, no apps will be installed."
+      ignore_errors: true
+
+    - name: wait 5 seconds to realise the message
+      delegate_to: localhost
+      ansible.builtin.wait_for:
+        timeout: 10
+
+    - name: full stop
+      ansible.builtin.meta: end_play
+
+- name: find account defaults
+  bodsch.core.account_defaults:
+    default_user: "{{ nextcloud_owner_default }}"
+  register: _default_user
+
+- name: define nextcloud user and group
+  ansible.builtin.set_fact:
+    nextcloud_owner: "{{ _default_user.user }}"
+    nextcloud_group: "{{ _default_user.group }}"
+
+- name: check for app updates
+  bodsch.cloud.nextcloud_update_apps:
+    state: "check"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nextcloud_apps_updates
+
+# compare detected and wanted version
+- name: define nextcloud update
+  ansible.builtin.set_fact:
+    nextcloud_update: "{{
+        nextcloud_version is version_compare(current_nextcloud_version, '>') or
+        nextcloud_apps_updates.updates | default(false) | bool
+    }}"
+
+# - name: d
+#   debug:
+#     msg:
+#       - "nextcloud_version: {{ nextcloud_version }}"
+#       - "current_nextcloud_version: {{ current_nextcloud_version }}"
+#       - "nextcloud_update: {{ nextcloud_update }}"
+#       - "nextcloud_apps_updates: {{ nextcloud_apps_updates.updates | default(false) | bool }}"
+
+...
