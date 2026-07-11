@@ -53,6 +53,8 @@ jobs:
           - default
         collection_role:
           - nextcloud
+          - nextcloud_apps
+          - nextcloud_users
           - collabora
           - calcardbackup
 
