@@ -53,6 +53,17 @@
     collabora_owner: "{{ _default_user.user }}"
     collabora_group: "{{ _default_user.group }}"
 
+- name: detect if proof_key exists
+  ansible.builtin.stat:
+    path: /etc/coolwsd/proof_key
+  register: collabora_proof_key
+
+- name: create missing proof_key
+  ansible.builtin.command:
+    cmd: coolconfig generate-proof-key
+  when:
+    - collabora_proof_key.stat.exists 
+
 - name: merge collabora service configuration between defaults and custom
   ansible.builtin.set_fact:
     collabora_service: "{{ collabora_defaults_service | combine(collabora_service, recursive=True) }}"
