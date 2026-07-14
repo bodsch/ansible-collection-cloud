@@ -10,7 +10,7 @@ ConditionPathExists     = {{ ical_backup_config.backupfolder }}
 
 [Service]
 Type                    = oneshot
-ExecStart               = /usr/bin/nextcloud-ical-backup --config /etc/nextcloud-ical-backup/config.toml
+ExecStart               = /usr/bin/nextcloud-ical-backup backup --config /etc/nextcloud-ical-backup/config.toml
 
 WorkingDirectory        = /tmp
 User                    = root
