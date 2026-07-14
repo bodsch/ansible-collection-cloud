@@ -62,7 +62,7 @@
   ansible.builtin.command:
     cmd: coolconfig generate-proof-key
   when:
-    - collabora_proof_key.stat.exists 
+    - not collabora_proof_key.stat.exists | default(false) | bool
 
 - name: merge collabora service configuration between defaults and custom
   ansible.builtin.set_fact:
