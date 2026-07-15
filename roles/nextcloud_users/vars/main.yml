@@ -1,0 +1,11 @@
+---
+
+current_nextcloud_version: ""
+
+nextcloud_update: false
+
+nextcloud_delegate_to: localhost
+
+nextcloud_owner_default: www-data
+
+...

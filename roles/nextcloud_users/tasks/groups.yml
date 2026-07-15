@@ -1,0 +1,10 @@
+---
+
+- name: nextcloud groups
+  bodsch.cloud.nextcloud_groups:
+    groups: "{{ nextcloud_groups }}"
+    working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
+    owner: "{{ nextcloud_owner }}"
+  register: nc_status
+
+...

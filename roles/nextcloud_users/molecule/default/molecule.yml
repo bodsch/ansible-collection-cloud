@@ -1,0 +1,63 @@
+---
+
+role_name_check: 1
+
+dependency:
+  name: galaxy
+  options:
+    ignore-errors: true
+
+driver:
+  name: docker
+
+platforms:
+  - name: instance
+    image: "ghcr.io/bodsch/docker-ansible/ansible-${DISTRIBUTION:-debian:12}"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /var/lib/containerd
+    tmpfs:
+      - /run
+      - /tmp
+
+provisioner:
+  name: ansible
+  ansible_args:
+    - --diff
+    - -v
+  config_options:
+    defaults:
+      deprecation_warnings: true
+      callback_result_format: yaml
+      callbacks_enabled: profile_tasks
+      gathering: smart
+      fact_caching_timeout: 320
+    # callback_diy:
+    #   msg_ok: "
+    #     OK: {{ ansible_facts.callback_diy.task.name }} auf {{ ansible_facts.callback_diy.result._host }}
+    #     Ergebnis:
+    #       {{ ansible_facts.callback_diy.result | to_nice_yaml }}"
+    #   # msg_ok: ""
+    #   msg_skipped: ""
+    #   msg_unreachable: "Host {{ ansible_facts.callback_diy.result._host }} nicht erreichbar"
+    #   msg_failed: "Fehler bei Task {{ ansible_facts.callback_diy.task.name }}"
+
+scenario:
+  test_sequence:
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy
+
+verifier:
+  name: testinfra
