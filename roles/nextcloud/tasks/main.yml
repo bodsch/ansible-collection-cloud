@@ -1,11 +1,6 @@
 ---
 
 - name: prepare
-  ansible.builtin.include_tasks: detect_php_version.yml
-  tags:
-    - nextcloud_prepare
-
-- name: prepare
   ansible.builtin.include_tasks: prepare.yml
   tags:
     - nextcloud_prepare

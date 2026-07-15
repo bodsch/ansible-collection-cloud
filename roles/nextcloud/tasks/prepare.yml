@@ -1,33 +1,5 @@
 ---
 
-- name: check PHP compatibility for Nextcloud {{ nextcloud_version }}
-  bodsch.cloud.nextcloud_validate_php:
-    nextcloud_version: "{{ nextcloud_version }}"
-    php_version: "{{ php_full_version }}"
-    from_git: true
-  register: supported_php_version
-
-- name: do facts module to get latest information
-  ansible.builtin.setup:
-
-- name: assert supported php version for nextcloud {{ nextcloud_version }}
-  ansible.builtin.assert:
-    that:
-      - supported_php_version is defined
-      - supported_php_version.compatible is defined
-      - supported_php_version.compatible
-    msg: "{{ supported_php_version.reason }}"
-
-- name: assert release type '{{ nextcloud_release_type }}' for version {{ nextcloud_version }}
-  ansible.builtin.assert:
-    that:
-      - nextcloud_release_type is defined
-      - nextcloud_release_type is in ["releases", "prereleases", "daily"]
-    msg: "The release type must be either 'releases', or 'prereleases', or 'daily'! found: {{ nextcloud_release_type }}"
-    quiet: true
-  when:
-    - nextcloud_main_version is version('2', '==', strict=False)
-
 - name: include OS specific configuration
   ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
@@ -46,17 +18,46 @@
         - default.yaml
       skip: true
 
+- name: detect ansible check_mode
+  bodsch.core.check_mode:
+  register: _check_mode
+
+- name: define running_in_check_mode
+  ansible.builtin.set_fact:
+    running_in_check_mode: '{{ _check_mode.check_mode }}'
+
+- name: install dependencies
+  when:
+    - not running_in_check_mode
+    - nextcloud_dependencies | default([]) | count > 0
+  ansible.builtin.package:
+    name: "{{ nextcloud_dependencies }}"
+    state: present
+
+- name: detect php version and service
+  when:
+    - not running_in_check_mode
+  ansible.builtin.include_tasks: detect_php_version.yml
+  tags:
+    - nextcloud_prepare
+
 - name: find account defaults
+  when:
+    - not running_in_check_mode
   bodsch.core.account_defaults:
     default_user: "{{ nextcloud_owner_default }}"
   register: _default_user
 
 - name: define nextcloud user and group
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     nextcloud_owner: "{{ _default_user.user }}"
     nextcloud_group: "{{ _default_user.group }}"
 
 - name: assert nextcloud group
+  when:
+    - not running_in_check_mode
   ansible.builtin.assert:
     that:
       - nextcloud_group is defined or nextcloud_group | length == 0
@@ -66,32 +67,42 @@
 # -- verify PHP dependencies --
 
 - name: merge nextcloud configuration between defaults and custom
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     nextcloud_database: "{{ nextcloud_defaults_database | combine(nextcloud_database, recursive=True) }}"
 
 - name: define core php dependencies
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     nextcloud_php_dependencies: "{{ nextcloud_php_dependencies.core | default([]) }}"
 
 - name: append database package
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_database | default({}) | bodsch.cloud.nc_database_driver(nextcloud_php_packages) }}"
 
 - name: append php redis packages while redis host are defined
+  when:
+    - not running_in_check_mode
+    - nextcloud_defaults.redis | default([]) | bodsch.cloud.nc_configured_cache('redis') | count > 0
   ansible.builtin.set_fact:
     nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_php_packages.redis }}"
   register: package_version
-  when:
-    - nextcloud_defaults.redis | default([]) | bodsch.cloud.nc_configured_cache('redis') | count > 0
 
 - name: append php memcache packages while memcache host are defined
+  when:
+    - not running_in_check_mode
+    - nextcloud_defaults.memcache | default({}) | bodsch.cloud.nc_configured_cache('memcache') | count > 0
   ansible.builtin.set_fact:
     nextcloud_php_dependencies: "{{ nextcloud_php_dependencies + nextcloud_php_packages.memcache }}"
   register: package_version
-  when:
-    - nextcloud_defaults.memcache | default({}) | bodsch.cloud.nc_configured_cache('memcache') | count > 0
 
 - name: validate php module dependencies
+  when:
+    - not running_in_check_mode
   bodsch.cloud.nextcloud_php_dependencies:
     package_name: "{{ php_package_name | default('php-fpm') }}"
     php_dependencies: "{{ nextcloud_php_dependencies | default([]) | bodsch.cloud.nc_php_module_name() }}"

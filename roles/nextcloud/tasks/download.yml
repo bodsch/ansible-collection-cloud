@@ -1,25 +1,31 @@
 ---
 
 - name: define download information
+  when:
+    - not running_in_check_mode
+    - nextcloud_release | count > 0
   ansible.builtin.set_fact:
     nextcloud_release: {}
-  when:
-    - nextcloud_release | count > 0
 
 - name: define download information
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     nextcloud_release: "{{ nextcloud_defaults_release | combine(nextcloud_release, recursive=True) }}"
 
 - name: define delegate instance for download handling
+  when:
+    - not running_in_check_mode
+    - nextcloud_direct_download
   ansible.builtin.set_fact:
     nextcloud_delegate_to: "{{ ansible_facts.host }}"
     nextcloud_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
         default('/var/cache/ansible/nextcloud', true) }}/{{ nextcloud_version }}"
-  when:
-    - nextcloud_direct_download
 
 - name: create download directory
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ nextcloud_delegate_to }}"
   run_once: "{{ 'false' if nextcloud_direct_download else 'true' }}"
@@ -29,6 +35,8 @@
     mode: "0750"
 
 - name: detect the downloaded nextcloud archive
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ nextcloud_delegate_to }}"
   run_once: "{{ 'false' if nextcloud_direct_download else 'true' }}"
@@ -38,6 +46,7 @@
 
 - name: download
   when:
+    - not running_in_check_mode
     - stat_nextcloud_archive.stat is defined
     - not stat_nextcloud_archive.stat.exists | default('false')
   block:

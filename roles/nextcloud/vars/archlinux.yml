@@ -6,6 +6,7 @@ nextcloud_owner_default: http
 
 nextcloud_dependencies:
   - python-pip
+  - python-dbus
 
 php_fpm_daemon: "{{ php_package_name | default('php-fpm') }}{{ php_major_version }}"
 

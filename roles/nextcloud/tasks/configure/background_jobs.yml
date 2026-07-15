@@ -2,6 +2,7 @@
 
 - name: remove background cron job
   when:
+    - not running_in_check_mode
     - not nextcloud_background_jobs.enabled | default('false') | bool
     - nextcloud_background_jobs.type | default('webcron') | string | lower in ["cron", "ajax", "webcron", "systemd"]
   block:
@@ -34,6 +35,7 @@
 
 - name: create background cron job
   when:
+    - not running_in_check_mode
     - nextcloud_background_jobs.enabled | default('false') | bool
     - nextcloud_background_jobs.type | default('webcron') |  string | lower in ["cron", "ajax", "webcron", "systemd"]
   block:

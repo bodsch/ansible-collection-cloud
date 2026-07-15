@@ -1,12 +1,15 @@
 ---
 
 - name: merge nextcloud configuration between defaults and custom
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     nextcloud_database: "{{ nextcloud_defaults_database | combine(nextcloud_database, recursive=True) }}"
     nextcloud_defaults: "{{ nextcloud_defaults_defaults | combine(nextcloud_defaults, recursive=True) }}"
 
 - name: nextcloud custom data directory
   when:
+    - not running_in_check_mode
     - nextcloud_defaults.data_directory is defined
     - nextcloud_defaults.data_directory | string | length > 0
   block:
@@ -27,6 +30,8 @@
         group: "{{ nextcloud_group }}"
 
 - name: install nextcloud with base configuration
+  when:
+    - not running_in_check_mode
   bodsch.cloud.nextcloud_occ:
     command: "maintenance:install"
     working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
@@ -45,27 +50,29 @@
   register: nc_status
 
 - name: installation state  # noqa no-handler
+  when:
+    - not running_in_check_mode
+    - nc_status.changed
   ansible.builtin.debug:
     msg: "{{ nc_status }}"
-  when:
-    - nc_status.changed
 
 - name: custom data directory
   when:
+    - not running_in_check_mode
     - nc_status.changed
     - nextcloud_defaults.data_directory is defined
     - nextcloud_defaults.data_directory | string | length > 0
   block:
     - name: sync {{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/data to {{ nextcloud_defaults.data_directory }}
+      when:
+        - nextcloud_defaults.data_directory is defined
+        - nextcloud_defaults.data_directory | string | length > 0
       bodsch.core.sync_directory:
         source_directory: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/data"
         destination_directory: "{{ nextcloud_defaults.data_directory }}"
         arguments:
           verbose: true
           purge: false
-      when:
-        - nextcloud_defaults.data_directory is defined
-        - nextcloud_defaults.data_directory | string | length > 0
 
     - name: fix rights and ownership
       ansible.builtin.file:
@@ -75,6 +82,8 @@
         recurse: true
 
 - name: write nextcloud import configuration
+  when:
+    - not running_in_check_mode
   bodsch.cloud.nextcloud_config:
     working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/server"
     owner: "{{ nextcloud_owner }}"
@@ -92,23 +101,16 @@
   register: nc_config
 
 - name: configuration state  # noqa no-handler
+  when:
+    - not running_in_check_mode
+    - nc_config.changed
   ansible.builtin.debug:
     msg: "{{ nc_config }}"
-  when:
-    - nc_config.changed
 
 - name: manage nextcloud background jobs
-  ansible.builtin.include_tasks: background_jobs.yml
   when:
+    - not running_in_check_mode
     - nextcloud_background_jobs.type | default('') |  string | lower in ["cron", "ajax", "webcron", "systemd"]
-
-# - name: manage nextcloud groups
-#   ansible.builtin.include_tasks: groups.yml
-#
-# - name: manage nextcloud users
-#   ansible.builtin.include_tasks: users.yml
-
-# - name: manage nextcloud apps
-#   ansible.builtin.include_tasks: apps.yml
+  ansible.builtin.include_tasks: background_jobs.yml
 
 ...

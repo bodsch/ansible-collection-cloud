@@ -1,30 +1,24 @@
 ---
 
-- name: define directories
-  ansible.builtin.set_fact:
-    nextcloud_directories: "{{ nextcloud_defaults | bodsch.cloud.nc_directories }}"
-
 - name: create remote nextcloud directories
-  ansible.builtin.file:
-    state: directory
-    mode: "0770"
-    group: "{{ nextcloud_group }}"
-    path: "{{ item }}"
-  loop: "{{ nextcloud_directories }}"
-  loop_control:
-    label: "{{ item }}"
   when:
-    - nextcloud_directories is defined
-    - nextcloud_directories | count > 0
+    - not running_in_check_mode
+  bodsch.core.directories:
+    group: "{{ nextcloud_group }}"
+    mode: "0770"
+    paths: "{{ nextcloud_defaults | bodsch.cloud.nc_directories | default([]) | bodsch.core.directory_path() }}"
 
 - name: merge dependencies between defaults and custom
-  ansible.builtin.set_fact:
-    nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_packages }}"
   when:
+    - not running_in_check_mode
     - nextcloud_dependencies | count > 0 or
       nextcloud_packages | count > 0
+  ansible.builtin.set_fact:
+    nextcloud_dependencies: "{{ nextcloud_dependencies + nextcloud_packages }}"
 
 - name: install dependencies
+  when:
+    - not running_in_check_mode
   ansible.builtin.package:
     name: "{{ nextcloud_dependencies }}"
     state: present
@@ -64,6 +58,7 @@
 
 - name: python support
   when:
+    - not running_in_check_mode
     - nextcloud_python_packages is defined
     - nextcloud_python_packages | count > 0
   block:
@@ -105,6 +100,8 @@
         - pip_install.failed
 
 - name: detect installed nextcloud
+  when:
+    - not running_in_check_mode
   ansible.builtin.stat:
     path: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/lib/versioncheck.php"
     get_checksum: false
@@ -114,6 +111,8 @@
   changed_when: not __stat_present_nextcloud.stat.exists
 
 - name: detect type of {{ nextcloud_install_base_directory }}/nextcloud/server
+  when:
+    - not running_in_check_mode
   ansible.builtin.stat:
     path: "{{ nextcloud_install_base_directory }}/nextcloud/server"
     get_checksum: false
@@ -122,16 +121,18 @@
 
 # this should be a link!
 - name: remove directory '{{ nextcloud_install_base_directory }}'
-  ansible.builtin.file:
-    state: absent
-    path: "{{ nextcloud_install_base_directory }}/nextcloud/server"
   when:
+    - not running_in_check_mode
     - __stat_share_nextcloud.stat is defined
     - __stat_share_nextcloud.stat.exists | default('false') | bool
     - __stat_share_nextcloud.stat.isdir | default('true') | bool
+  ansible.builtin.file:
+    state: absent
+    path: "{{ nextcloud_install_base_directory }}/nextcloud/server"
 
 - name: install nextcloud
   when:
+    - not running_in_check_mode
     - not __stat_present_nextcloud.stat.exists
   block:
     - name: create remote temp directory
@@ -214,6 +215,8 @@
           - "{{ nc_status.msg }}"
 
 - name: check nextcloud installation
+  when:
+    - not running_in_check_mode
   bodsch.cloud.nextcloud_occ:
     command: "status"
     working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
@@ -222,12 +225,15 @@
   ignore_errors: false
 
 - name: validate state  # noqa no-handler
+  when:
+    - not running_in_check_mode
+    - nc_status.failed
   ansible.builtin.debug:
     msg: "{{ nc_status.msg }}"
-  when:
-    - nc_status.failed
 
 - name: detect type of nextcloud config
+  when:
+    - not running_in_check_mode
   ansible.builtin.stat:
     dest: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/config"
     get_checksum: false
@@ -241,6 +247,7 @@
   block:
     - name: config handler
       when:
+        - not running_in_check_mode
         - __stat_nextcloud_config.stat.exists
         - __stat_nextcloud_config.stat.isdir | default('true')
       block:
@@ -264,6 +271,8 @@
             force: true
 
     - name: detect nextcloud config.json
+      when:
+        - not running_in_check_mode
       ansible.builtin.stat:
         dest: "{{ nextcloud_install_base_directory }}/nextcloud/config/config.json"
         get_checksum: false
@@ -271,17 +280,20 @@
       register: __stat_nextcloud_config_json
 
     - name: syncronize config for first run
+      when:
+        - not running_in_check_mode
+        - __stat_nextcloud_config_json.stat.exists is defined
+        - not __stat_nextcloud_config_json.stat.exists
       bodsch.core.sync_directory:
         source_directory: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}/config_DIST"
         destination_directory: "{{ nextcloud_install_base_directory }}/nextcloud/config"
         arguments:
           verbose: true
           purge: false
-      when:
-        - __stat_nextcloud_config_json.stat.exists is defined
-        - not __stat_nextcloud_config_json.stat.exists
 
     - name: enable config write after syncronize
+      when:
+        - not running_in_check_mode
       ansible.builtin.file:
         # state: directory
         mode: "0775"
@@ -291,6 +303,8 @@
         recurse: true
 
 - name: create link for nextcloud-version {{ nextcloud_version }} to {{ nextcloud_install_base_directory }}/nextcloud/server
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
     src: '{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}'
     dest: '{{ nextcloud_install_base_directory }}/nextcloud/server'
@@ -303,12 +317,15 @@
     - restart php-fpm
 
 - name: flush handlers
+  when:
+    - not running_in_check_mode
   ansible.builtin.meta: flush_handlers
 
 - name: nexcloud updates
   block:
-
     - name: check nextcloud for updates
+      when:
+        - not running_in_check_mode
       bodsch.cloud.nextcloud_occ:
         command: "status"
         working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
@@ -317,23 +334,27 @@
       ignore_errors: true
 
     - name: try nextcloud update
+      when:
+        - not running_in_check_mode
+        - nc_status is defined
+        - nc_status.upgrade | default('false') | bool
       bodsch.cloud.nextcloud_occ:
         command: "upgrade"
         working_dir: "{{ nextcloud_install_base_directory }}/nextcloud/{{ nextcloud_version }}"
         owner: "{{ nextcloud_owner }}"
       register: nc_update
       ignore_errors: true
-      when:
-        - nc_status is defined
-        - nc_status.upgrade | default('false') | bool
 
     - name: validate state  # noqa no-handler
+      when:
+        - not running_in_check_mode
+        - nc_status.upgrade | default('false') or nc_status.failed | default('false')
       ansible.builtin.debug:
         msg: "{{ nc_status.msg }}"
-      when:
-        - nc_status.upgrade | default('false') or nc_status.failed | default('false')
 
 - name: create custom fact file
+  when:
+    - not running_in_check_mode
   bodsch.core.facts:
     name: nextcloud
     facts:

@@ -10,6 +10,10 @@ nextcloud_trusted_domains:
   - nextcloud.molecule.lan
   - nextcloud.molecule.local
 
+nextcloud_php_daemon:
+  restart: true
+  name: auto-detect
+
 nextcloud_password_salt: cpkxiYp1+qP2YQBGHBz+Tyxq5hzK3D
 nextcloud_secret: '0Yvgwz56NtIYLL1t6+5DhUuUA1HZCbl7ojaLLOQQMZN4kYM3'
 

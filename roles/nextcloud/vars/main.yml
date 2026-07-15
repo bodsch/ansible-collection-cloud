@@ -19,6 +19,7 @@ nextcloud_dependencies:
   - tar
   - bzip2
   - python3-pip
+  - python3-dbus
   - sudo
 
 nextcloud_php_packages:
