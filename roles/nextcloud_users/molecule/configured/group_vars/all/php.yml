@@ -1,0 +1,108 @@
+---
+
+php_version: "8"
+
+# default are 'php'
+# for archlinux, you can choose also 'php-lecacy'
+php_package_name: php-fpm # "{{ 'php-legacy-fpm' if ansible_facts.os_family | lower == 'archlinux' else 'php-fpm' }}"
+
+php_memory_limit: "1G"
+
+_debian_defaults: &DEBIAN_DEFAULTS
+  - php-curl
+  - php-zip
+  - php-sqlite3
+  - php-mbstring
+  - php-gd
+
+_arch_defaults: &ARCH_DEFAULTS
+  - php-sqlite
+  - php-gd
+
+php_packages: "{{ _debian_defaults if ansible_facts.os_family | lower == 'debian' else _arch_defaults }}"
+
+php_modules:
+  - name: opcache
+    enabled: true
+    priority: 10
+    content: |
+      zend_extension=opcache
+      opcache.enable=1
+      opcache.enable_cli=1
+      opcache.memory_consumption=128
+      opcache.interned_strings_buffer=16
+      opcache.max_accelerated_files=10000
+      opcache.max_wasted_percentage=5
+      opcache.validate_timestamps=1
+      opcache.revalidate_path=0
+      opcache.revalidate_freq=1
+      opcache.max_file_size=0
+  # before memcached!
+  # - name: msgpack
+  #   enabled: true
+  #   priority: 18
+  #   content: |
+  #     extension=msgpack
+  - name: pdo_mysql
+    enabled: false
+    priority: 20
+    content: |
+      extension=pdo_mysql
+      pdo_mysql.cache_size = 2000
+  - name: pdo_sqlite
+    enabled: true
+    priority: 20
+    content: |
+      extension=pdo_sqlite
+  - name: sqlite3
+    enabled: true
+    priority: 20
+    content: |
+      extension=sqlite3
+  - name: gd
+    enabled: true
+    priority: 20
+    content: |
+      extension=gd
+      gd.jpeg_ignore_warning = 1
+  - name: intl
+    enabled: true
+    priority: 20
+    content: |
+      extension=intl
+      intl.default_locale=de
+  - name: xmlrpc
+    enabled: "{{ 'false' if ansible_facts.os_family | lower == 'archlinux' else 'true' }}"
+    priority: 20
+    content: |
+      extension=xmlrpc
+  - name: gettext
+    enabled: true
+    priority: 20
+    content: |
+      extension=gettext
+  - name: curl
+    enabled: true
+    priority: 20
+    content: |
+      extension=curl
+  - name: memcached
+    enabled: false
+    priority: 20
+    content: |
+      extension=memcached
+
+  - name: zip
+    enabled: true
+    priority: 20
+    content: |
+      extension=zip
+  # disable (old) modules
+  - name: apcu
+    enabled: false
+    # priority: 20
+    content: |
+      extension=apcu
+      apc.shm_size=96M
+      apc.enable_cli=0
+      apc.rfc1867=1

@@ -1,0 +1,25 @@
+---
+
+- name: prepare
+  ansible.builtin.include_tasks: prepare.yml
+  tags:
+    - nextcloud_users
+    - nextcloud_users_prepare
+
+- name: create nextcloud groups
+  when:
+    - nextcloud_groups is defined
+    - nextcloud_groups | default([]) | count > 0
+  ansible.builtin.include_tasks: groups.yml
+  tags:
+    - nextcloud_users
+
+- name: install nextcloud apps
+  when:
+    - nextcloud_users is defined
+    - nextcloud_users | default([]) | count > 0
+  ansible.builtin.include_tasks: users.yml
+  tags:
+    - nextcloud_users
+
+...

@@ -1,0 +1,53 @@
+---
+
+nextcloud_groups:
+  - name: test
+    display_name: "Testing with spaces"
+    state: present
+  - name: test2
+    state: absent
+
+nextcloud_users:
+  - name: bodsch
+    password: "{{ vault__users.bodsch }}"
+    display_name: Bod Sch
+    groups:
+      - test
+    settings:
+      - settings:
+          display_name: Bodo Schulz
+          email: "bodsch@molecule.lan"
+
+  - name: molecule
+    password: "{{ vault__users.molecule }}"
+    display_name: Molecule Tester
+    groups:
+      - test
+    settings:
+      - settings:
+          email: "molecule@matrix.lan"
+      - notifications:
+          - sound_notification: true
+      - firstrunwizard:
+          show: 0
+      - calendar:
+          showWeekNr: true
+
+  - name: alice
+    password: "{{ vault__users.alice }}"
+    display_name: Alice B. Charlie
+    groups:
+      - test
+      - test2
+      - foo
+      - bar
+
+  - name: honk
+    password: "{{ vault__users.honk }}"
+    state: absent
+    resetpassword: true
+    display_name: Honk
+    groups:
+      - test
+
+...
