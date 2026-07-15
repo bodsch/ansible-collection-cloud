@@ -1,12 +1,16 @@
 ---
 
 - name: detect available php version
+  when:
+    - not running_in_check_mode
   bodsch.cloud.nextcloud_php_version:
     package_name: "{{ php_package_name | default('php-fpm') }}"
     package_version: "{{ php_version }}"
   register: detected_php_version
 
 - name: validate php module dependencies
+  when:
+    - not running_in_check_mode
   bodsch.cloud.nextcloud_php_dependencies:
     package_name: "{{ php_package_name | default('php-fpm') }}"
     php_dependencies: "{{ nextcloud_php_dependencies.core | default([]) }}"
@@ -18,6 +22,7 @@
     php_full_version: "{{ detected_php_version.version.full_version }}"
     php_major_version: "{{ detected_php_version.version.major_version }}"
   when:
+    - not running_in_check_mode
     - not detected_php_version.failed
     - detected_php_version.version.full_version is defined
     - detected_php_version.version.major_version is defined
@@ -26,11 +31,73 @@
   ansible.builtin.set_fact:
     php_major_version: ""
   when:
+    - not running_in_check_mode
     - ansible_facts.distribution | lower == 'archlinux' or
       ansible_facts.distribution | lower | replace(' ', '') == 'artixlinux'
     - php_major_version | int == 8
 
+- name: systemd
+  when:
+    - not running_in_check_mode
+    - ansible_facts.service_mgr == "systemd"
+    - nextcloud_php_daemon.name in ["auto", "auto-detect", "auto_detect", "detect"]
+  block:
+
+    - name: ensure dbus service are running
+      ansible.builtin.service:
+        name: dbus.service
+        state: started
+
+    - name: detect systemd unit name for php-fpm
+      bodsch.systemd.service_info:
+        name:
+          - php*-fpm*
+        first_match: true
+      register: php_fpm_service
+
+    - name: store detected service name in nextcloud_php_daemon
+      when: php_fpm_service.found
+      ansible.builtin.set_fact:
+        nextcloud_php_daemon: "{{ nextcloud_php_daemon | default({}) | combine({'name': php_fpm_service.service.name}) }}"
+
+- name: check PHP compatibility for Nextcloud {{ nextcloud_version }}
+  when:
+    - not running_in_check_mode
+  bodsch.cloud.nextcloud_validate_php:
+    nextcloud_version: "{{ nextcloud_version }}"
+    php_version: "{{ php_full_version }}"
+    from_git: true
+  register: supported_php_version
+
+- name: do facts module to get latest information
+  when:
+    - not running_in_check_mode
+  ansible.builtin.setup:
+
+- name: assert supported php version for nextcloud {{ nextcloud_version }}
+  when:
+    - not running_in_check_mode
+  ansible.builtin.assert:
+    that:
+      - supported_php_version is defined
+      - supported_php_version.compatible is defined
+      - supported_php_version.compatible
+    msg: "{{ supported_php_version.reason }}"
+
+- name: assert release type '{{ nextcloud_release_type }}' for version {{ nextcloud_version }}
+  when:
+    - not running_in_check_mode
+    - nextcloud_main_version is version('2', '==', strict=False)
+  ansible.builtin.assert:
+    that:
+      - nextcloud_release_type is defined
+      - nextcloud_release_type is in ["releases", "prereleases", "daily"]
+    msg: "The release type must be either 'releases', or 'prereleases', or 'daily'! found: {{ nextcloud_release_type }}"
+    quiet: true
+
 - name: re-include OS specific configuration
+  when:
+    - not running_in_check_mode
   ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:

@@ -24,8 +24,9 @@ tags:
   - office
 
 dependencies:
-  bodsch.core: ">=2.13.5"
+  bodsch.core: ">=2.14.0"
   bodsch.scm: ">=1.12.0"
+  bodsch.systemd: ">=1.7.0"
   bodsch.php: ">=1.4.0"
 
 repository: https://github.com/bodsch/ansible-collection-cloud
@@ -34,12 +35,19 @@ homepage: https://github.com/bodsch/ansible-collection-cloud
 issues: https://github.com/bodsch/ansible-collection-cloud/issues
 
 build_ignore:
-  - "galaxy.yml"
   - "*.pyc"
   - "*.retry"
+  - "*/molecule"
   - ".ansible-lint"
+  - ".config"
   - ".editorconfig"
   - ".flake8"
+  - ".git"
+  - ".github"
   - ".gitignore"
   - ".yamllint"
-  - ".github"
+  - "Makefile"
+  - "galaxy.yml"
+  - "hooks"
+  - "test-requirements.txt"
+  - "tox.ini"
