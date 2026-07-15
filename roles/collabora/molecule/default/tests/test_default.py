@@ -36,6 +36,8 @@ def test_files(host, get_vars):
     files = [
         "/etc/default/coolwsd",
         "/etc/coolwsd/coolwsd.xml",
+        "/etc/coolwsd/proof_key",
+        "/etc/coolwsd/proof_key.pub",
         "/lib/systemd/system/coolwsd.service",
         "/etc/systemd/system/multi-user.target.wants/coolwsd.service",
         "/opt/collaboraoffice/NOTICE",
